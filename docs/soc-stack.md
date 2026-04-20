@@ -37,7 +37,7 @@ The following OPNSense rules are in place to support SOC stack operation:
 RuleProtocolPortPurposeSOC DNS (TCP)TCP53DNS resolution for SOC VLANSOC DNS (UDP)UDP53DNS resolution for SOC VLANLAN SSH to wazuh-managerTCP22Agent management access
 
 Pending Items
-ItemStatusOPNSense agentless SSH checkFailing — timeout to root@10.0.0.1Standard-PC-Q35-ICH9-2009 hostnameNoisy hostname needs hostnamectl fixVM 700 agent deploymentDeferred — VM was shut down at rollout timeLogstash ssl_verification_modeNot yet set to fullSuricata IPS modeCurrently in detection-only (IDS) modeRoot SSH login on Proxmox nodesNot yet disabled
+ItemStatusOPNSense agentless SSH checkResolved — .passlist entry was missing after manager restart; re-added root@10.0.0.1 NOPASS, confirmed Test passed for 'ssh_integrity_check_bsd'Standard-PC-Q35-ICH9-2009 hostnameNoisy hostname needs hostnamectl fixVM 700 agent deploymentDeferred — VM was shut down at rollout timeLogstash ssl_verification_modeNot yet set to fullSuricata IPS modeCurrently in detection-only (IDS) modeRoot SSH login on Proxmox nodesNot yet disabled
 
 Related Documentation
 
