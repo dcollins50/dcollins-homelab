@@ -8,7 +8,7 @@ Everything here is real and running. Where something is planned or in progress, 
 
 ## What This Is
 
-This is not a tutorial lab. It is a working environment I use to develop hands-on skills in network engineering, security operations, virtualization, and systems administration. I built it from scratch, manage it myself, and treat it with the same discipline I would apply to a professional environment — documented procedures, internal PKI, segmented networks, centralized logging, and a running SIEM.
+This is not a tutorial lab. It is a working environment I use to develop hands-on skills in network engineering, security operations, virtualization, and systems administration. I built it from scratch, manage it myself, and treat it with the same discipline I would apply to a professional environment; documented procedures, internal PKI, segmented networks, centralized logging, and a running SIEM.
 
 The stack covers:
 
