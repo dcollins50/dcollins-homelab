@@ -8,7 +8,7 @@ Everything here is real and running. Where something is planned or in progress, 
 
 ## What This Is
 
-This is not a tutorial lab. It is a working environment I use to develop hands-on skills in network engineering, security operations, virtualization, and systems administration. I built it from scratch, manage it myself, and treat it with the same discipline I would apply to a professional environment; documented procedures, internal PKI, segmented networks, centralized logging, and a running SIEM.
+This is not a tutorial lab. It is a working environment I use to develop hands-on skills in network engineering, security operations, virtualization, and systems administration. I built it from scratch, manage it myself, and treat it with the same discipline I would apply to a professional environment — documented procedures, internal PKI, segmented networks, centralized logging, and a running SIEM.
 
 The stack covers:
 
@@ -30,9 +30,7 @@ The network is segmented into discrete VLANs enforced at both the firewall and m
 
 Full topology documentation: [docs/network.md](docs/network.md)
 
----
-
-## VLAN Summary
+### VLAN Summary
 
 | VLAN | Name | Purpose | Status |
 |------|------|---------|--------|
@@ -40,7 +38,7 @@ Full topology documentation: [docs/network.md](docs/network.md)
 | 10 | SOC | ELK Stack, Wazuh Manager | Live |
 | 20/30 | Trusted LAN / Services | Self-hosted services, internal PKI | Live |
 | 40/41 | Security Lab | Kali, Metasploitable2, DVWA, Jetson | Live |
-| 50 | DMZ | Public-facing services via Cloudflare Tunnel | Planned |
+| 50 | DMZ | Public-facing services via Cloudflare Tunnel | Live |
 | 51 | SSH Bastion | Hardened single SSH entry point | Planned |
 | 60 | Storage | NAS appliance | Live |
 
@@ -91,7 +89,7 @@ Full topology documentation: [docs/network.md](docs/network.md)
 
 The SOC environment is built on Elastic Stack 8.19 and Wazuh v4.14.4, running on dedicated hardware in an isolated VLAN with TLS enforced across all components.
 
-**Active dashboards:**
+Active dashboards:
 
 - Security Events
 - Malware Detection
@@ -101,7 +99,7 @@ The SOC environment is built on Elastic Stack 8.19 and Wazuh v4.14.4, running on
 - Docker Listener
 - OPNSense Firewall
 
-Wazuh agents are deployed across all fourteen endpoints in the cluster. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates. Filebeat ships Wazuh alerts to Elasticsearch with fourteen `wazuh-states-*` indices confirmed active.
+Wazuh agents are deployed across all fourteen endpoints in the cluster. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates. Filebeat ships Wazuh alerts to Elasticsearch with fourteen wazuh-states-* indices confirmed active.
 
 Full SOC documentation: [docs/soc-stack.md](docs/soc-stack.md)
 
@@ -114,8 +112,7 @@ All internal services communicate over TLS using certificates issued by an inter
 - Root CA signs the Intermediate CA only. The root private key is kept offline.
 - Intermediate CA issues leaf certificates to all internal services.
 - Certificates are deployed across Elasticsearch, Kibana, Wazuh, Nginx Proxy Manager, and all Proxmox nodes.
-
-The Root CA is planned to migrate to the management VLAN for improved isolation.
+- The Root CA is planned to migrate to the management VLAN for improved isolation.
 
 Full PKI documentation: [docs/pki.md](docs/pki.md)
 
@@ -149,18 +146,18 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 
 | Item | Description |
 |------|-------------|
-| VLAN50 DMZ | Public-facing services via Cloudflare Tunnel, Nginx Proxy Manager migration |
 | VLAN51 SSH Bastion | Hardened single-entry SSH gateway replacing direct node access |
 | Cloudflare Tunnels | Zero-trust ingress for public services, no open inbound ports |
 | Self-Hosted Website | Personal site and portfolio hosted in DMZ |
 | Stoat Messenger | Self-hosted messaging |
 | Root CA migration | Move Root CA to VLAN1 management for improved isolation |
 | Suricata IPS mode | Promote from detection-only to inline blocking |
-| GitHub homelab documentation | This repository |
 
 ---
 
 ## Documentation
+
+### Architecture and Infrastructure
 
 | Document | Description |
 |----------|-------------|
@@ -169,7 +166,35 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 | [docs/soc-stack.md](docs/soc-stack.md) | ELK Stack and Wazuh deployment, dashboards, and agent rollout |
 | [docs/pki.md](docs/pki.md) | Internal PKI architecture, certificate issuance, and TLS deployment |
 | [docs/security-lab.md](docs/security-lab.md) | Security lab environment and penetration testing setup |
+
+### Standard Operating Procedures
+
+| Document | Description |
+|----------|-------------|
 | [docs/sop-sec-001.md](docs/sop-sec-001.md) | SOP: Homelab Security Hardening — Pre-Internet Exposure Readiness |
+| [docs/sop-vlan-implementation.md](docs/sop-vlan-implementation.md) | SOP: VLAN Implementation with OPNSense and Managed Switch |
+
+### SOC Operational Procedures
+
+| Document | Description |
+|----------|-------------|
+| [docs/soc/soc-phase1-baseline.md](docs/soc/soc-phase1-baseline.md) | Phase 1: Establishing a SIEM Baseline |
+| [docs/soc/soc-phase2-tuning.md](docs/soc/soc-phase2-tuning.md) | Phase 2: Noise Reduction and Rule Tuning |
+| [docs/soc/soc-phase3-triage.md](docs/soc/soc-phase3-triage.md) | Phase 3: Alert Triage Workflow |
+| [docs/soc/soc-phase4-iris.md](docs/soc/soc-phase4-iris.md) | Phase 4: Case Management with DFIR-IRIS |
+| [docs/soc/soc-phase5-response.md](docs/soc/soc-phase5-response.md) | Phase 5: Active Response and Forensic Collection |
+
+### Runbooks and Incident Records
+
+| Document | Description |
+|----------|-------------|
+| [docs/runbooks/runbook-vlan-failure-postmortem.md](docs/runbooks/runbook-vlan-failure-postmortem.md) | Post-mortem: VLAN Implementation Failure — January 2026 |
+| [docs/runbooks/runbook-vlan-recovery.md](docs/runbooks/runbook-vlan-recovery.md) | Recovery: VLAN Implementation Continuation |
+| [docs/runbooks/runbook-vlan-connectivity-fixes-jan2026.md](docs/runbooks/runbook-vlan-connectivity-fixes-jan2026.md) | Runbook: VLAN Connectivity Troubleshooting — January 2026 |
+| [docs/runbooks/runbook-vlan-security-lab-troubleshooting.md](docs/runbooks/runbook-vlan-security-lab-troubleshooting.md) | Runbook: Security Lab VLAN Troubleshooting |
+| [docs/runbooks/runbook-proxmox-subnet-migration.md](docs/runbooks/runbook-proxmox-subnet-migration.md) | Runbook: Proxmox Subnet Migration — 192.168.100.x to 10.0.0.x |
+| [docs/runbooks/runbook-incident-review-march30.md](docs/runbooks/runbook-incident-review-march30.md) | Incident Review: SOC DNS and Firewall Gaps — March 2026 |
+| [docs/runbooks/runbook-session-log-march30.md](docs/runbooks/runbook-session-log-march30.md) | Session Log: SOC TLS Hardening and Wazuh Deployment — March 2026 |
 
 ---
 
