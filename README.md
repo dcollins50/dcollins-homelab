@@ -8,7 +8,7 @@ Everything here is real and running. Where something is planned or in progress, 
 
 ## What This Is
 
-This is not a tutorial lab. It is a working environment I use to develop hands-on skills in network engineering, security operations, virtualization, and systems administration. I built it from scratch, manage it myself, and treat it with the same discipline I would apply to a professional environment — documented procedures, internal PKI, segmented networks, centralized logging, and a running SIEM.
+This is not a tutorial lab. It is a working environment I use to develop hands-on skills in network engineering, security operations, virtualization, and systems administration. I built it from scratch, manage it myself, and treat it with the same discipline I would apply to a professional environment, documented procedures, internal PKI, segmented networks, centralized logging, and a running SIEM.
 
 The stack covers:
 
@@ -172,7 +172,7 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 
 | Document | Description |
 |----------|-------------|
-| [docs/sop-sec-001.md](docs/sop-sec-001.md) | SOP: Homelab Security Hardening — Pre-Internet Exposure Readiness |
+| [docs/sop-sec-001.md](docs/sop-sec-001.md) | SOP: Homelab Security Hardening, Pre-Internet Exposure Readiness |
 | [docs/sop-vlan-implementation.md](docs/sop-vlan-implementation.md) | SOP: VLAN Implementation with OPNSense and Managed Switch |
 
 ### SOC Operational Procedures
