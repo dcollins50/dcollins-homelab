@@ -14,8 +14,8 @@ The stack covers:
 
 - Four-node Proxmox VE cluster with production VMs across segmented VLANs
 - OPNSense firewall with Suricata IDS/IPS and full VLAN isolation
-- Wazuh SIEM with agents deployed across fourteen endpoints
-- Elastic Stack 8.19 with seven active security dashboards
+- Wazuh SIEM with agents deployed across eight active endpoints
+- Elastic Stack 8.19 with twelve active security dashboards
 - Internal PKI with a Root CA and Intermediate CA issuing TLS certificates across all services
 - Dedicated security lab environment for penetration testing and adversary simulation
 - WireGuard VPN for secure remote administration
@@ -89,17 +89,18 @@ Full topology documentation: [docs/network.md](docs/network.md)
 
 The SOC environment is built on Elastic Stack 8.19 and Wazuh v4.14.4, running on dedicated hardware in an isolated VLAN with TLS enforced across all components.
 
-Active dashboards:
+**Custom dashboards:**
 
-- Security Events
-- Malware Detection
-- Incident Response
-- PCI-DSS Compliance
-- Vulnerability Management
-- Docker Listener
+- SIEM Baseline
 - OPNSense Firewall
+- Proxmox Infrastructure
+- Heimdall Gateway
+- Jetson
+- Suricata SOC
 
-Wazuh agents are deployed across all fourteen endpoints in the cluster. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates. Filebeat ships Wazuh alerts to Elasticsearch with fourteen wazuh-states-* indices confirmed active.
+**Wazuh dashboards (imported):** Seven official Wazuh dashboards active covering security events, vulnerability management, compliance, and agent status.
+
+Wazuh agents are deployed across eight active endpoints. OPNSense is monitored via agentless SSH. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates. Fourteen wazuh-states-* indices confirmed active.
 
 Full SOC documentation: [docs/soc-stack.md](docs/soc-stack.md)
 
@@ -183,6 +184,13 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 | [docs/soc/soc-phase3-triage.md](docs/soc/soc-phase3-triage.md) | Phase 3: Alert Triage Workflow |
 | [docs/soc/soc-phase4-iris.md](docs/soc/soc-phase4-iris.md) | Phase 4: Case Management with DFIR-IRIS |
 | [docs/soc/soc-phase5-response.md](docs/soc/soc-phase5-response.md) | Phase 5: Active Response and Forensic Collection |
+
+### SOC Implementation Records
+
+| Document | Description |
+|----------|-------------|
+| [docs/soc/Implementation/soc-phase1-baseline-report-public.md](docs/soc/Implementation/soc-phase1-baseline-report-public.md) | Phase 1 Baseline Report — April 2026 |
+| [docs/soc/Implementation/soc-phase2-session-summary-public.md](docs/soc/Implementation/soc-phase2-session-summary-public.md) | Phase 2 Session Summary — April 2026 |
 
 ### Runbooks and Incident Records
 
