@@ -26,6 +26,8 @@ The stack covers:
 
 The network is segmented into discrete VLANs enforced at both the firewall and managed switch layers. Each VLAN operates under a default-deny firewall policy with explicit allowlists for required traffic flows. No VLAN has unrestricted access to another.
 
+![Homelab Network Diagram](docs/network-diagram.png)
+
 Full topology documentation: [docs/network.md](docs/network.md)
 
 ### VLAN Summary
