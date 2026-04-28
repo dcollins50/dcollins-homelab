@@ -171,8 +171,8 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 
 | Document | Description |
 |---|---|
-| [docs/sops/sop-sec-001.md](docs/sops/sop-sec-001.md) | SOP: Homelab Security Hardening, Pre-Internet Exposure Readiness |
-| [docs/sops/sop-vlan-implementation.md](docs/sops/sop-vlan-implementation.md) | SOP: VLAN Implementation with OPNSense and Managed Switch |
+| [docs/sop/sop-sec-001.md](docs/sops/sop-sec-001.md) | SOP: Homelab Security Hardening, Pre-Internet Exposure Readiness |
+| [docs/sop/sop-vlan-implementation.md](docs/sops/sop-vlan-implementation.md) | SOP: VLAN Implementation with OPNSense and Managed Switch |
 
 ### SOC Operational Procedures
 
