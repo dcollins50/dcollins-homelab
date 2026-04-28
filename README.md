@@ -70,7 +70,7 @@ Full topology documentation: [docs/network.md](docs/network.md)
 |---|---|---|---|---|
 | services-host (VM 200) | pve-env1 | VLAN20 | Docker Host 1 | Live |
 | kalshi-mm (VM 290) | pve-env1 | VLAN20 | Market maker app | Live |
-| services-host2 (VM 700) | pve-env1 | VLAN20 | Docker Host 2 | Live |
+| docker-host-template (VM 603) | pve-env1 | VLAN10 | Docker host template -- pending Shuffle SOAR deployment (post-Phase 3) | Template |
 | soc-stack (VM 600) | pve-SOC | VLAN10 | Elasticsearch, Logstash, Kibana | Live |
 | wazuh-manager (VM 601) | pve-SOC | VLAN10 | Wazuh SIEM manager | Live |
 | ubuntu (VM 401) | pve-services | VLAN30 | General services | Live |
@@ -151,6 +151,7 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 | Stoat Messenger | Self-hosted messaging |
 | Root CA migration | Move Root CA to VLAN1 management for improved isolation |
 | Suricata IPS mode | Promote from detection-only to inline blocking |
+| Shuffle SOAR deployment | Deploy from VM 603 template once Phase 3 triage is complete |
 
 ---
 
