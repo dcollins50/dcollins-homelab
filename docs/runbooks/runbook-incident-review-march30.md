@@ -95,10 +95,10 @@ The firewall audit in February did not include a test phase. Future hardening se
 
 | **Item** | **Notes** | **Status** |
 | --- | --- | --- |
-| Fix stale Heimdall route — 10.99.0.0/24 via 192.168.100.2 → via 192.168.100.250 | NM connection file on Heimdall, route2 field | **Open** |
-| Deploy Wazuh Manager-only on pve-SOC | 4GB VM, feeds existing Elasticsearch | **Open** |
+| Fix stale Heimdall route — 10.99.0.0/24 via 192.168.100.2 → via 192.168.100.250 | NM connection file on Heimdall, route2 field | **Closed** |
+| Deploy Wazuh Manager-only on pve-SOC | 4GB VM, feeds existing Elasticsearch | **Closed** |
 | Disable root password SSH on Proxmox nodes (key-only) | Part of general hardening session | **Open** |
-| Suricata tuning and IPS mode | After hardening session | **Open** |
+| Suricata tuning and IPS mode | After hardening session | **Partial** |
 | soc-stack DNS fix | Resolved this session | **Closed** |
 | SSH to Heimdall from LAN (firewall gap) | Discovered and resolved this session | **Closed** |
 
