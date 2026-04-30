@@ -130,7 +130,7 @@ The security lab is fully isolated from all production VLANs. VLAN40 hosts the K
 
 ---
 
-### VLAN50 — DMZ (Planned)
+### VLAN50 — DMZ
 
 The DMZ will host all public-facing services. Traffic will enter exclusively via Cloudflare Tunnel — no inbound port forwarding will be configured on the WAN interface. Nginx Proxy Manager will handle reverse proxying from the tunnel to internal services.
 
