@@ -53,7 +53,7 @@ The SOC VLAN was built with outbound HTTP/HTTPS and specific host rules, but DNS
 
 During the firewall audit, broad permissive rules were replaced with scoped explicit rules. The audit methodology focused on evaluating existing rules for over-permission rather than validating every required access path end-to-end. SSH to Heimdall was not an active workflow during the audit, so it was never tested and the gap went undetected.
 
-# **What We Could Have Done Better**
+# **What I Could Have Done Better**
 
 ## **Access Matrix Validation**
 
