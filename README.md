@@ -203,6 +203,7 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 | [docs/runbooks/runbook-proxmox-subnet-migration.md](docs/runbooks/runbook-proxmox-subnet-migration.md) | Runbook: Proxmox Subnet Migration -- 192.168.100.x to 10.0.0.x |
 | [docs/runbooks/runbook-incident-review-march30.md](docs/runbooks/runbook-incident-review-march30.md) | Incident Review: SOC DNS and Firewall Gaps -- March 2026 |
 | [docs/runbooks/runbook-session-log-march30.md](docs/runbooks/runbook-session-log-march30.md) | Session Log: SOC TLS Hardening and Wazuh Deployment -- March 2026 |
+| [docs/runbooks/runbook-logstash-tls-hardening.md](https://github.com/dcollins50/dcollins-homelab/blob/main/docs/runbooks/runbook-logstash-tls-hardening.md) | Runbook: Logstash TLS Certificate Verification Hardening -- May 2026 |
 
 ---
 
