@@ -23,8 +23,8 @@ The homelab runs an internal two-tier PKI (Root CA on VM 500, Intermediate CA on
 
 The Logstash pipelines affected were:
 
-- `/etc/logstash/conf.d/proxmox.conf` -- 4 output blocks (proxmox, jetson, opnsense, heimdall)
-- `/etc/logstash/conf.d/suricata.conf` -- 1 output block
+- `/etc/logstash/conf.d/proxmox.conf` - 4 output blocks (proxmox, jetson, opnsense, heimdall)
+- `/etc/logstash/conf.d/suricata.conf` - 1 output block
 
 ---
 
@@ -43,8 +43,8 @@ The Intermediate CA cert lives on VM 501 at `~/homelab-ca/intermediate-ca/certs/
 On the workstation:
 
 ```bash
-scp ryan@10.0.0.21:~/homelab-ca/intermediate-ca/certs/intermediate-ca.crt .
-scp intermediate-ca.crt ryan@10.0.10.10:/tmp/homelab-intermediate-ca.crt
+scp ryan@<pve-ca-intermediate-ip>:~/homelab-ca/intermediate-ca/certs/intermediate-ca.crt .
+scp intermediate-ca.crt ryan@<soc-stack-ip>:/tmp/homelab-intermediate-ca.crt
 ```
 
 On soc-stack:
@@ -71,7 +71,7 @@ ssl_verification_mode => "full"
 ssl_certificate_authorities => ["/etc/logstash/certs/homelab-intermediate-ca.crt"]
 ```
 
-Also updated all `hosts` entries from `https://localhost:9200` to `https://10.0.10.10:9200` to match the SANs on the Elasticsearch certificate (`elasticsearch.homelab.local`, `10.0.10.10`).
+Also updated all `hosts` entries from `https://localhost:9200` to the Elasticsearch node IP to match the SANs on the Elasticsearch certificate (`elasticsearch.homelab.local` and the node IP).
 
 ### 3. Validate config syntax
 
@@ -107,14 +107,14 @@ Confirmed no certificate errors in `/var/log/logstash/logstash-plain.log` after 
 Confirmed documents actively writing to Elasticsearch:
 
 ```bash
-curl -s -u elastic:<password> https://10.0.10.10:9200/proxmox-logs-*/_count -k
+curl -s -u elastic:<password> https://<elasticsearch-ip>:9200/proxmox-logs-*/_count -k
 ```
 
 Document count increased between successive calls. Today's index confirmed active:
 
 ```bash
 curl -s -u elastic:<password> \
-  "https://10.0.10.10:9200/proxmox-logs-$(date +%Y.%m.%d)/_count" -k
+  "https://<elasticsearch-ip>:9200/proxmox-logs-$(date +%Y.%m.%d)/_count" -k
 ```
 
 Returned a non-zero count confirming live writes.
