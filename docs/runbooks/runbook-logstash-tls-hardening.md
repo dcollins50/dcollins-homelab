@@ -125,7 +125,7 @@ Returned a non-zero count confirming live writes.
 
 - The `.bak`, `.bak2`, and `.save` files in `/etc/logstash/conf.d/` are not loaded by the pipeline glob (`*.conf`) but should be cleaned up to reduce confusion.
 - `TimeoutStopSec=infinity` in the systemd unit caused a slow shutdown when the pipeline had inflight events it could not flush. Consider setting a finite timeout (e.g., `TimeoutStopSec=60`) to avoid this in future restarts.
-- The `suricata.conf` pipeline has `ssl_verification_mode => "full"` configured but Suricata is not yet deployed. That output block will remain dormant until Suricata is enabled on OPNSense.
+- The `suricata.conf` pipeline is active. Suricata 8.0.2 is running on OPNSense in IDS mode on the WAN interface with the Emerging Threats Open ruleset. EVE JSON is shipping to Logstash port 5147 and indexing into `suricata-logs-*` in Elasticsearch. TLS verification on that pipeline was also corrected in this session.
 
 ---
 
