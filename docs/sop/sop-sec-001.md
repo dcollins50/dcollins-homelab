@@ -72,21 +72,21 @@ Complete each section in order. For each control item: check the box when the co
 
 | Status | Control Item | Verified By | Date |
 |--------|-------------|-------------|------|
-| [ ] | Root login disabled on all nodes (`PermitRootLogin no`) | | |
-| [ ] | Password authentication disabled (`PasswordAuthentication no`) | | |
-| [ ] | Ed25519 (or RSA 4096) key pairs deployed to all managed nodes | | |
-| [ ] | SSH key passphrases set on all private keys | | |
-| [ ] | `AllowUsers` or `AllowGroups` directive configured on each host | | |
-| [ ] | `MaxAuthTries` set to 3 or fewer | | |
-| [ ] | `LoginGraceTime` set to 30 seconds or fewer | | |
-| [ ] | `ClientAliveInterval 300` and `ClientAliveCountMax 2` configured on all nodes (not bastion only) | | |
-| [ ] | Fail2ban (or equivalent) installed and active on all SSH-accessible nodes | | |
-| [ ] | SSH warning banner configured (`Banner /etc/issue.net`) | | |
+| [x] | Root login disabled on all nodes (`PermitRootLogin no`) | DC | 2026-05-03 |
+| [x] | Password authentication disabled (`PasswordAuthentication no`) | DC | 2026-05-03 |
+| [x] | Ed25519 (or RSA 4096) key pairs deployed to all managed nodes | DC | 2026-05-03 |
+| [x] | SSH key passphrases set on all private keys | DC | 2026-05-03 |
+| [x] | `AllowUsers` or `AllowGroups` directive configured on each host | DC | 2026-05-03 |
+| [x] | `MaxAuthTries` set to 3 or fewer | DC | 2026-05-03 |
+| [x] | `LoginGraceTime` set to 30 seconds or fewer | DC | 2026-05-03 |
+| [x] | `ClientAliveInterval 300` and `ClientAliveCountMax 2` configured on all nodes (not bastion only) | DC | 2026-05-03 |
+| [x] | Fail2ban (or equivalent) installed and active on all SSH-accessible nodes | DC | 2026-05-03 |
+| [x] | SSH warning banner configured (`Banner /etc/issue.net`) | DC | 2026-05-03 |
 | [ ] | SSH access on all gateway/edge devices restricted to management network only | | |
-| [ ] | SSH hardened on any always-on single-board or embedded devices | | |
-| [ ] | Ciphers restricted to strong algorithms only (e.g., `chacha20-poly1305@openssh.com`, `aes256-gcm@openssh.com`) | | |
-| [ ] | MACs restricted to strong algorithms only (e.g., `hmac-sha2-512-etm@openssh.com`, `hmac-sha2-256-etm@openssh.com`) | | |
-| [ ] | KEX algorithms restricted (e.g., `curve25519-sha256`, `diffie-hellman-group16-sha512`) | | |
+| [x] | SSH hardened on any always-on single-board or embedded devices (Heimdall) | DC | 2026-05-03 |
+| [x] | Ciphers restricted to strong algorithms only (e.g., `chacha20-poly1305@openssh.com`, `aes256-gcm@openssh.com`) | DC | 2026-05-03 |
+| [x] | MACs restricted to strong algorithms only (e.g., `hmac-sha2-512-etm@openssh.com`, `hmac-sha2-256-etm@openssh.com`) | DC | 2026-05-03 |
+| [x] | KEX algorithms restricted (e.g., `curve25519-sha256`, `diffie-hellman-group16-sha512`) | DC | 2026-05-03 |
 | [ ] | SSH key rotation schedule defined and documented (recommended: annually or after any suspected compromise) | | |
 
 ---
