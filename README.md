@@ -85,7 +85,7 @@ Full topology documentation: [docs/network.md](docs/network.md)
 
 ## SOC Stack
 
-The SOC environment is built on Elastic Stack 8.19 and Wazuh v4.14.4, running on dedicated hardware in an isolated VLAN with TLS enforced across all components.
+The SOC environment is built on Elastic Stack 8.19 and Wazuh v4.14, running on dedicated hardware in an isolated VLAN with TLS enforced across all components. The SOC has completed Phase 2.5 (noise reduction and tuning baseline) and is currently pending Phase 3 (alert triage workflow and Shuffle SOAR deployment).
 
 Custom dashboards:
 
@@ -191,6 +191,8 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 | [docs/soc/Implementation/soc-phase1-baseline-report-public.md](docs/soc/Implementation/soc-phase1-baseline-report-public.md) | Phase 1 Baseline Report -- April 2026 |
 | [docs/soc/Implementation/soc-phase2-session-summary-public.md](docs/soc/Implementation/soc-phase2-session-summary-public.md) | Phase 2 Session Summary -- April 2026 |
 | [docs/soc/Implementation/soc-phase2.5-midweek-state.md](docs/soc/Implementation/soc-phase2.5-midweek-state.md) | Phase 2.5 Midweek Baseline State Report -- April 28, 2026 |
+| [docs/soc/Implementation/soc-phase2.5-may2-closeout.md](docs/soc/Implementation/soc-phase2.5-may2-closeout.md) | Phase 2.5 Close-Out Report -- May 2, 2026 |
+| [docs/soc/Implementation/soc-phase2-completion-signoff.md](docs/soc/Implementation/soc-phase2-completion-signoff.md) | Phase 2 Completion Sign-Off -- May 2, 2026 |
 
 ### Runbooks and Incident Records
 
