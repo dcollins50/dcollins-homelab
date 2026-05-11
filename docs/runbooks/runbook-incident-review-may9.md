@@ -140,7 +140,5 @@ The `10-pihole.conf` file was moved during the session before its contents were 
 | --- | --- | --- |
 | Pi-hole log ingestion via rsyslog imfile | Original May 9 goal; deferred | **Open** |
 | Automated alerting for Heimdall log ingestion drop-off | No monitoring currently exists | **Open** |
-| Historical Heimdall log timestamps incorrect by 5 hours | Accepted; reindex not performed | **Open** |
-| Disable root password SSH on Proxmox nodes | Carried from prior sessions | **Open** |
 
 github.com/dcollins50/dcollins-homelab  |  Internal Documentation  |  Not for Distribution
