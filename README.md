@@ -293,5 +293,5 @@ Task-level, repeatable procedures for operating each piece of software in this s
 ## Certifications and Education
 
 - CompTIA A+ (March 2026)
-- CompTIA Network+ (In Progress, 2026)
+- CompTIA Network+ (June 2026)
 - B.S. Cybersecurity and Information Assurance, Western Governors University (Expected November 2026)
