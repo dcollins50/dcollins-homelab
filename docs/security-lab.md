@@ -6,16 +6,14 @@ This document covers the security lab environment, including network isolation, 
 
 ## Network Isolation
 
-The security lab runs across two isolated VLANs enforced at the OPNSense firewall layer. Neither VLAN has any route to production, services, SOC, management, or storage VLANs. This isolation is enforced by default-deny firewall rules with no exceptions.
+The security lab runs across two VLANs enforced at the OPNSense firewall layer. Neither VLAN has any route to production, services, trust infrastructure, SOC, management, or storage VLANs. This isolation is enforced by default-deny firewall rules with no exceptions.
 
 | VLAN | Hosts | Internet Access | Lateral Access |
 |------|-------|----------------|----------------|
-| VLAN40 | Kali Linux VM, Jetson Orin Nano | Restricted (tool updates only) | None |
-| VLAN41 | Metasploitable2, DVWA, malware-win11 | None | None |
+| VLAN40 | Kali Linux VM, Metasploitable2, DVWA, Jetson Orin Nano | Restricted (tool updates only) | Flat network — all VLAN40 hosts can reach each other directly |
+| VLAN41 | malware-win11 | None | Fully air-gapped — no route to or from any other VLAN, including VLAN40 |
 
-VLAN41 is fully air-gapped. Hosts in VLAN41 cannot reach the internet or any other network segment. This ensures malware samples and vulnerable targets cannot be used as pivot points or exfiltrate data.
-
-Kali in VLAN40 can reach targets in VLAN41, simulating an attacker on a compromised internal host attempting lateral movement.
+Kali, Metasploitable2, and DVWA all sit on the same broadcast domain (VLAN40), so Kali can attack them directly with no additional routing required. VLAN41 is a separate, fully isolated pocket reserved for the malware analysis sandbox — it has no connectivity anywhere, including to Kali, which rules out using it as a lateral-movement target from VLAN40.
 
 ---
 
@@ -36,7 +34,7 @@ The Jetson runs local AI inference independent of external APIs. It is used for 
 
 ## Virtual Machines
 
-All lab VMs run on pve-lab (HP EliteDesk G3, 10.0.0.10).
+All lab VMs run on pve-gateway (HP EliteDesk G3, 10.0.0.10).
 
 ### Kali Linux (VM 300)
 
@@ -57,10 +55,10 @@ Tools in regular use include Nmap, Metasploit Framework, Burp Suite, Gobuster, H
 | Field | Value |
 |-------|-------|
 | VM ID | 301 |
-| Network | VLAN41 (air-gapped) |
+| Network | VLAN40 |
 | Role | Intentionally vulnerable Linux target |
 
-Metasploitable2 is a deliberately vulnerable Linux distribution designed for penetration testing practice. It exposes a range of exploitable services including weak SSH credentials, vulnerable FTP, unpatched web applications, and misconfigured network services. No internet access. No route to other VLANs.
+Metasploitable2 is a deliberately vulnerable Linux distribution designed for penetration testing practice. It exposes a range of exploitable services including weak SSH credentials, vulnerable FTP, unpatched web applications, and misconfigured network services. Reachable directly from Kali on the same flat VLAN40 network.
 
 ---
 
@@ -69,10 +67,10 @@ Metasploitable2 is a deliberately vulnerable Linux distribution designed for pen
 | Field | Value |
 |-------|-------|
 | VM ID | 302 |
-| Network | VLAN41 (air-gapped) |
+| Network | VLAN40 |
 | Role | Vulnerable web application target |
 
-DVWA provides a web application environment for practicing common web vulnerabilities including SQL injection, cross-site scripting, command injection, file inclusion, and CSRF. Security level is configurable for progressive difficulty. No internet access. No route to other VLANs.
+DVWA provides a web application environment for practicing common web vulnerabilities including SQL injection, cross-site scripting, command injection, file inclusion, and CSRF. Security level is configurable for progressive difficulty. Reachable directly from Kali on the same flat VLAN40 network.
 
 ---
 
@@ -84,7 +82,7 @@ DVWA provides a web application environment for practicing common web vulnerabil
 | Network | VLAN41 (air-gapped) |
 | Role | Malware analysis and Windows attack simulation |
 
-A Windows 11 VM used for malware analysis and Windows-specific attack scenarios. Complete network isolation prevents any malware executed in this environment from reaching external infrastructure or internal networks. Also used for practicing Windows privilege escalation and credential attacks in preparation for Active Directory lab work.
+A Windows 11 VM used for malware analysis and Windows-specific attack scenarios. Complete network isolation, no route to or from any other VLAN including VLAN40, prevents any malware executed in this environment from reaching external infrastructure or internal networks. Also used for practicing Windows privilege escalation and credential attacks in preparation for Active Directory lab work.
 
 ---
 
@@ -104,7 +102,7 @@ A Windows 11 VM used for malware analysis and Windows-specific attack scenarios.
 
 Wazuh agents are deployed on Kali Linux (VM 300) to monitor offensive activity and generate telemetry that flows back to the SOC stack. This creates a bidirectional view — attack traffic is visible in the OPNSense firewall logs and Suricata alerts in Kibana, and system-level activity on the attacker machine is visible through the Wazuh agent.
 
-Vulnerable targets in VLAN41 do not run Wazuh agents given their intentionally compromised state.
+Vulnerable targets on VLAN40 (Metasploitable2, DVWA) and the sandbox on VLAN41 (malware-win11) do not run Wazuh agents given their intentionally compromised or isolated state.
 
 ---
 
@@ -112,7 +110,7 @@ Vulnerable targets in VLAN41 do not run Wazuh agents given their intentionally c
 
 | Item | Description |
 |------|-------------|
-| Active Directory lab | Windows Server 2022 domain controller on pve-services. Kali and malware-win11 selectively domain-joined for AD attack scenarios. Deferred until after Network+ exam. |
+| Active Directory lab | Windows Server 2022 domain controller on pve-services, used purely as an attack-range target for AD lab scenarios. Kali and malware-win11 selectively domain-joined for practice. Not related to production identity, which runs on Authentik. Deferred until after Network+ exam. |
 | Wazuh agent on Jetson | Deferred — straightforward Debian-based install, not yet in scope |
 
 ---

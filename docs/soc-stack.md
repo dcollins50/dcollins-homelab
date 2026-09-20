@@ -2,7 +2,7 @@
 
 The SOC environment runs on dedicated hardware isolated in VLAN10, separated from all production services, internal services, and the security lab. Nothing in VLAN10 has unsolicited inbound access from other VLANs. All components communicate over TLS using certificates issued by the internal PKI.
 
-This is a working SOC stack, not a demo environment. Agents are deployed across the full cluster, logs are ingesting in real time, and dashboards are populated with live data.
+This is a working SOC stack, not a demo environment. Agents are deployed across the cluster, logs are ingesting in real time, and dashboards are populated with live data. Beyond detection and log analysis, the stack now also includes alert automation (Shuffle SOAR) and incident case management (DFIR-IRIS).
 
 ---
 
@@ -10,10 +10,12 @@ This is a working SOC stack, not a demo environment. Agents are deployed across 
 
 | Component | Host | IP | Specs |
 |-----------|------|----|-------|
-| ELK Stack (VM 600) | pve-SOC (HP EliteDesk G6) | 10.0.10.10 | 16GB RAM, 8 cores, 200GB boot disk, 250GB NVMe passthrough, VLAN10 |
-| Wazuh Manager (VM 601) | pve-SOC (HP EliteDesk G6) | 10.0.10.11 | 8GB RAM, 2 cores, VLAN10 |
+| ELK Stack (VM 600) | pve-env2 (HP EliteDesk G6) | 10.0.10.10 | 16GB RAM, 8 cores, 200GB boot disk, 250GB NVMe passthrough, VLAN10 |
+| Wazuh Manager (VM 601) | pve-env2 (HP EliteDesk G6) | 10.0.10.11 | 8GB RAM, 2 cores, VLAN10 |
+| soar-host (VM 602) | pve-env1 (HP EliteDesk G5) | 10.0.10.12 | Shuffle SOAR |
+| pve-iris (VM 604) | pve-env1 (HP EliteDesk G5) | 10.0.10.13 | DFIR-IRIS |
 
-Both VMs run on the same dedicated physical node. pve-SOC is reserved exclusively for the SOC stack and runs nothing else.
+pve-env2 is reserved exclusively for the core ELK/Wazuh stack; soar-host and pve-iris run on pve-env1 since pve-env2's remaining capacity is reserved for additional agents.
 
 ---
 
@@ -25,7 +27,7 @@ Elasticsearch, Logstash, and Kibana run on VM 600 (soc-stack, 10.0.10.10).
 
 ### TLS Configuration
 
-TLS is enabled on both Elasticsearch and Kibana using certificates issued by the internal Intermediate CA. Kibana is accessible at `https://elasticsearch.homelab.local` via Nginx Proxy Manager. The Wazuh indexer connector points to Elasticsearch at `https://10.0.10.10:9200` using internal PKI certificates.
+TLS is enabled on both Elasticsearch and Kibana using certificates issued by the internal Intermediate CA. Kibana is accessible at `https://elasticsearch.homelab.local` via Nginx Proxy Manager. The Wazuh indexer connector points to Elasticsearch at `https://10.0.10.10:9200` using internal PKI certificates. Logstash's `ssl_verification_mode` is set to `full`.
 
 ### DNS
 
@@ -33,11 +35,11 @@ soc-stack DNS resolves via Pi-hole on Heimdall. A DNS record for `elasticsearch.
 
 ### Logstash Pipeline
 
-Logstash runs a pipeline that ingests OPNSense firewall logs and forwards them to Elasticsearch. A drop filter is in place to suppress OPNSense log statistics noise messages that would otherwise pollute the index.
+Logstash runs a pipeline that ingests OPNSense firewall logs and forwards them to Elasticsearch. A drop filter is in place to suppress OPNSense log statistics noise messages that would otherwise pollute the index. Heimdall's rsyslog output is also shipped to Logstash on a separate port from the main SOC ingest group.
 
-### Active Indices
+### Log Retention
 
-Fourteen `wazuh-states-*` indices are confirmed created and active. All index mappings are managed by the Wazuh indexer connector.
+A 90-day retention policy applies to general Elasticsearch log indices. `wazuh-alerts` gets a longer 365-day window since it's lower-volume, higher-signal incident data; `wazuh-archives` stays on the 90-day window.
 
 ---
 
@@ -45,23 +47,25 @@ Fourteen `wazuh-states-*` indices are confirmed created and active. All index ma
 
 **Version:** 4.14.4
 
-Wazuh Manager runs on VM 601 (wazuh-manager, 10.0.10.11). Filebeat is configured on the Wazuh Manager to ship alerts to Elasticsearch. Seventy-four documents were confirmed ingested on initial deployment.
+Wazuh Manager runs on VM 601 (wazuh-manager, 10.0.10.11). Filebeat is configured on the Wazuh Manager to ship alerts to Elasticsearch.
 
 ### Agent Deployment
 
-Wazuh agents are deployed across all fourteen endpoints in the cluster using TLS enrollment. The agent rollout was performed sequentially across all targets.
+Wazuh agents are deployed across cluster endpoints via TLS enrollment, including:
 
 | Target | Type | Network |
 |--------|------|---------|
 | services-host (VM 200) | Linux VM | VLAN20 |
-| kalshi-mm (VM 290) | Linux VM | VLAN20 |
 | soc-stack (VM 600) | Linux VM | VLAN10 |
 | wazuh-manager (VM 601) | Linux VM | VLAN10 |
 | ubuntu (VM 401) | Linux VM | VLAN30 |
+| kali-attack (VM 300) | Linux VM | VLAN40 |
 | pve-gateway | Proxmox node | VLAN1 |
 | pve-services | Proxmox node | VLAN1 |
 | pve-env1 | Proxmox node | VLAN1 |
 | pve-env2 | Proxmox node | VLAN1 |
+
+Vulnerable lab targets (Metasploitable2, DVWA, malware-win11) do not run Wazuh agents given their intentionally compromised state.
 
 OPNSense integration is configured for syslog forwarding. An agentless SSH check is also configured targeting the OPNSense management interface.
 
@@ -73,7 +77,7 @@ The Wazuh Docker wodle is enabled on VM 200 (services-host). The `wazuh` user is
 
 ## Kibana Dashboards
 
-Seven official Wazuh dashboards are imported and populated in Kibana. All dashboards are confirmed live and rendering against real agent data.
+Seven official Wazuh dashboards are imported and populated in Kibana.
 
 | Dashboard | Purpose |
 |-----------|---------|
@@ -89,13 +93,7 @@ Seven official Wazuh dashboards are imported and populated in Kibana. All dashbo
 
 ## Firewall Rules
 
-The following OPNSense rules are in place to support SOC stack operation:
-
-| Rule | Protocol | Port | Purpose |
-|------|----------|------|---------|
-| SOC DNS (TCP) | TCP | 53 | DNS resolution for SOC VLAN |
-| SOC DNS (UDP) | UDP | 53 | DNS resolution for SOC VLAN |
-| LAN SSH to wazuh-manager | TCP | 22 | Agent management access |
+SOC net has general outbound access on HTTP/HTTPS (80/443). soc-stack has a dedicated WireGuard rule to Heimdall. DNS is restricted to OPNSense as the only permitted resolver; all other DNS destinations are blocked. LAN SSH is permitted to wazuh-manager only (TCP 22) for agent management, and wazuh-manager itself is permitted agentless SSH back to OPNSense. Wazuh agents on VLAN10 reach wazuh-manager on TCP/UDP 1514-1515. soar-host and pve-iris do not yet have dedicated firewall rules beyond the general SOC net outbound policy.
 
 ---
 
@@ -103,12 +101,9 @@ The following OPNSense rules are in place to support SOC stack operation:
 
 | Item | Status |
 |------|--------|
-| OPNSense agentless SSH check | Resolved — `.passlist` entry was missing after manager restart; re-added `root@10.0.0.1 NOPASS`, confirmed `Test passed for 'ssh_integrity_check_bsd'` |
 | Standard-PC-Q35-ICH9-2009 hostname | Noisy hostname needs `hostnamectl` fix |
-| VM 700 agent deployment | Deferred — VM was shut down at rollout time |
-| Logstash `ssl_verification_mode` | Not yet set to `full` |
 | Suricata IPS mode | Currently in detection-only (IDS) mode |
-| Root SSH login on Proxmox nodes | Not yet disabled |
+| soar-host / pve-iris dedicated firewall rules | Not yet scoped, currently rely on general SOC net policy |
 
 ---
 
@@ -116,4 +111,3 @@ The following OPNSense rules are in place to support SOC stack operation:
 
 - [Network Architecture](network.md)
 - [Internal PKI](pki.md)
-- [SOP: Security Hardening](sop-sec-001.md)

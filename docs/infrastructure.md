@@ -16,7 +16,7 @@ OPNSense runs on a completely separate dedicated unit and is not part of the Pro
 
 ## Physical Nodes
 
-### pve-lab (HP EliteDesk G3)
+### pve-gateway (HP EliteDesk G3)
 
 | Field | Value |
 |-------|-------|
@@ -29,9 +29,9 @@ OPNSense runs on a completely separate dedicated unit and is not part of the Pro
 | VM | ID | Network | Role |
 |----|-----|---------|------|
 | kali-attack | 300 | VLAN40 | Penetration testing platform |
-| metasploitable2 | 301 | VLAN41 | Vulnerable target |
-| dvwa | 302 | VLAN41 | Vulnerable web application |
-| malware-win11 | 400 | VLAN41 | Malware analysis sandbox |
+| metasploitable2 | 301 | VLAN40 | Vulnerable target |
+| dvwa | 302 | VLAN40 | Vulnerable web application |
+| malware-win11 | 400 | VLAN41 | Malware analysis sandbox (air-gapped) |
 
 ---
 
@@ -40,16 +40,18 @@ OPNSense runs on a completely separate dedicated unit and is not part of the Pro
 | Field | Value |
 |-------|-------|
 | IP | 10.0.0.11 |
-| Role | Internal services, PKI infrastructure |
-| Primary VLAN | VLAN1 (management), VLAN30 (services VMs) |
+| Role | Internal services, PKI and trust infrastructure |
+| Primary VLAN | VLAN1 (management), VLAN30 (trust infrastructure) |
 
-**Hosted VMs:**
+**Hosted VMs/LXCs:**
 
-| VM | ID | Network | Role |
-|----|-----|---------|------|
+| VM/LXC | ID | Network | Role |
+|--------|----|---------|------|
 | ubuntu | 401 | VLAN30 | General services |
 | pve-ca-root | 500 | VLAN30 | Root CA |
 | pve-ca-intermediate | 501 | VLAN30 | Intermediate CA |
+| Authentik | LXC 2201 | VLAN30 | Self-hosted IdP/SSO |
+| pve-int-stepca | LXC 511 | VLAN30 | step-ca (Docker-in-LXC), planned Intermediate CA replacement |
 
 ---
 
@@ -58,21 +60,23 @@ OPNSense runs on a completely separate dedicated unit and is not part of the Pro
 | Field | Value |
 |-------|-------|
 | IP | 10.0.0.12 |
-| Role | Production services, Docker workloads |
+| Role | Production services, Docker workloads, SOC automation |
 | Primary VLAN | VLAN1 (management), VLAN20 (services VMs) |
 | Storage | 931.5GB NVMe (primary), 238.5GB NVMe (secondary) |
+| Specs | 6-core Intel i5-9500 @ 3.00GHz, 31.13 GiB RAM |
 
 **Hosted VMs:**
 
 | VM | ID | Network | Role |
 |----|-----|---------|------|
 | services-host | 200 | VLAN20 (10.0.20.30) | Docker Host 1 |
-| kalshi-mm | 290 | VLAN20 (10.0.20.50) | Market maker application |
-| services-host2 | 700 | VLAN20 (10.0.20.31) | Docker Host 2 |
+| soar-host | 602 | VLAN10 (10.0.10.12) | Shuffle SOAR — alert automation |
+| docker-host.template | 603 | — | Template for cloning new Docker-host VMs |
+| pve-iris | 604 | VLAN10 (10.0.10.13) | DFIR-IRIS — incident case tracking |
 
 ---
 
-### pve-SOC (HP EliteDesk G6)
+### pve-env2 (HP EliteDesk G6)
 
 | Field | Value |
 |-------|-------|
@@ -88,7 +92,7 @@ OPNSense runs on a completely separate dedicated unit and is not part of the Pro
 | soc-stack | 600 | VLAN10 (10.0.10.10) | Elasticsearch, Logstash, Kibana | 16GB RAM, 8 cores, 200GB boot, 250GB NVMe passthrough |
 | wazuh-manager | 601 | VLAN10 (10.0.10.11) | Wazuh SIEM Manager | 8GB RAM, 2 cores |
 
-pve-SOC is reserved exclusively for the SOC stack and runs no other workloads.
+pve-env2 is reserved exclusively for the core SOC stack (Elastic, Wazuh); soar-host and pve-iris run on pve-env1 since pve-env2's remaining capacity is reserved for additional agents.
 
 ---
 
@@ -117,7 +121,7 @@ Heimdall is racked alongside the cluster and runs continuously. It is the WAN en
 | Version | OPNSense 25.7 / FreeBSD 14.3 |
 | IDS/IPS | Suricata on WAN interface, detection-only mode |
 
-OPNSense is a completely standalone unit. It is not virtualized and is not part of the Proxmox cluster. All inter-VLAN routing and firewall enforcement runs here.
+OPNSense is a completely standalone unit. It is not virtualized and is not part of the Proxmox cluster. All inter-VLAN routing and firewall enforcement runs here. Updates are reviewed roughly every two weeks; a new release is deliberately held back if it carries a known unpatched vulnerability, applied once a fix ships.
 
 ---
 
@@ -157,7 +161,7 @@ All nodes resolve via Pi-hole at 192.168.100.1. SOC stack DNS was updated via ne
 |------|---------|------|-------|
 | pve-env1 | NVMe (primary) | 931.5GB | Proxmox data pool, VM disks |
 | pve-env1 | NVMe (secondary) | 238.5GB | Available |
-| pve-SOC | NVMe (passthrough to VM 600) | 250GB | Elasticsearch data |
+| pve-env2 | NVMe (passthrough to VM 600) | 250GB | Elasticsearch data |
 
 ---
 
@@ -165,10 +169,8 @@ All nodes resolve via Pi-hole at 192.168.100.1. SOC stack DNS was updated via ne
 
 | Item | Status |
 |------|--------|
-| Root SSH login on Proxmox nodes | Not yet disabled |
 | Standard-PC-Q35-ICH9-2009 hostname | Noisy hostname needs `hostnamectl` fix |
-| VM 700 Wazuh agent | Deferred — VM was shut down at rollout time |
-| Active Directory domain controller | Planned — deferred until after Network+ exam |
+| Active Directory lab (attack-range target, not production identity) | Planned — deferred until after Network+ exam |
 
 ---
 

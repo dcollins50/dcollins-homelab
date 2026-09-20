@@ -9,9 +9,9 @@ This document covers the internal certificate authority hierarchy, certificate i
 The PKI uses a two-tier hierarchy: an offline Root CA and an online Intermediate CA. This is the same pattern used in production enterprise environments. The Root CA's private key is kept offline and is only brought online to sign the Intermediate CA certificate or issue a new one. Day-to-day certificate issuance is handled exclusively by the Intermediate CA.
 
 ```
-Root CA (VM 500 — pve-services)
+Root CA (VM 500 — pve-services, VLAN30)
     |
-    +— Intermediate CA (VM 501 — pve-services)
+    +— Intermediate CA (VM 501 — pve-services, VLAN30)
             |
             +— Elasticsearch
             +— Kibana
@@ -21,7 +21,7 @@ Root CA (VM 500 — pve-services)
             +— All internal services requiring TLS
 ```
 
-The Root CA is planned to migrate from pve-services (VLAN30) to the management VLAN (VLAN1) for improved isolation.
+Both CAs run on VLAN30 (Trust Infrastructure), alongside Authentik (self-hosted IdP/SSO) and pve-int-stepca. Identity/SSO is handled by Authentik rather than a Windows Active Directory domain, so this PKI has no dependency on AD.
 
 ---
 
@@ -53,6 +53,8 @@ The Intermediate CA handles all day-to-day certificate issuance. It runs as a VM
 **Signs:** Leaf certificates for all internal services
 
 **Does not sign:** Other CA certificates
+
+**Migration in progress:** The Intermediate CA is being migrated from raw OpenSSL to step-ca, running in Docker inside a dedicated LXC (pve-int-stepca, pve-services, VLAN30). The migration imports the existing intermediate cert/key rather than generating a fresh root, so trust continuity is preserved. VM 501 remains in place as fallback until the new step-ca setup is validated.
 
 ---
 
@@ -109,6 +111,8 @@ openssl x509 -req -in service.csr \
   -extfile <(printf "subjectAltName=DNS:service.homelab.local,IP:10.x.x.x")
 ```
 
+This manual OpenSSL procedure reflects the current issuance process and will be superseded once the step-ca migration is validated and cut over.
+
 ### Deploying to a Service
 
 1. Copy `service.crt` and `service.key` to the target host
@@ -155,10 +159,7 @@ If the Intermediate CA is lost, a new Intermediate CA can be created and signed 
 
 | Item | Description |
 |------|-------------|
-| Root CA migration | Move Root CA VM from VLAN30 (pve-services) to VLAN1 (management) for improved isolation |
-| Active Directory CS integration | Planned subordinate AD CS issuing CA under the existing offline Root CA. VM 501 will be decommissioned and replaced. Deferred until after Network+ exam. |
-
-The AD CS integration will require reissuing certificates for all services currently under the Intermediate CA, including Elasticsearch, Kibana, Wazuh Manager, and NPM.
+| step-ca migration | Intermediate CA moving from raw OpenSSL to step-ca (Docker-in-LXC, pve-int-stepca). Existing intermediate cert/key imported rather than regenerated. VM 501 stays as fallback until the new setup is validated. Longer term, this is part of building a fully self-hosted, low-cost PKI/identity stack that could be replicated for other organizations at close to the cost of hardware and internet alone. |
 
 ---
 
@@ -166,4 +167,3 @@ The AD CS integration will require reissuing certificates for all services curre
 
 - [Network Architecture](network.md)
 - [SOC Stack](soc-stack.md)
-- [SOP: Security Hardening](sop-sec-001.md)

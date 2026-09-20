@@ -3,7 +3,7 @@
 
 **Prepared by:** Daniel Collins  
 **Incident Type:** Network Recovery and VLAN Troubleshooting  
-**Previous Document:** vlan-implementation-failure-postmortem.md  
+**Previous Document:** [runbook-vlan-failure-postmortem.md](runbook-vlan-failure-postmortem.md)  
 **Session Duration:** Approximately 2 hours  
 **Status:** System recovered, VLAN implementation blocked by hardware limitation
 

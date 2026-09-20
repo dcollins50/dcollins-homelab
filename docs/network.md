@@ -13,17 +13,20 @@ Heimdall (RPi5) — WiFi Bridge / WAN Gateway
     |
 OPNSense Firewall (Dedicated HP EliteDesk G3)
     |
+    +— Cloudflare Tunnels (Web, Admin)
+    +— Tailscale (break glass)
+    |
 TP-Link TL-SG108E (Managed Switch)
     |
     +— VLAN1  (Management)
     +— VLAN10 (SOC)
-    +— VLAN20 (Trusted LAN)
-    +— VLAN30 (Services)
-    +— VLAN40 (Security Lab)
-    +— VLAN41 (Isolated Lab)
-    +— VLAN50 (DMZ) [Planned]
-    +— VLAN51 (SSH Bastion) [Planned]
-    +— VLAN60 (Storage)
+    +— VLAN20 (Services)
+    +— VLAN30 (Trust Infrastructure)
+    +— VLAN40 (Security Lab 1)
+    +— VLAN41 (Security Lab 2)
+    +— VLAN50 (DMZ1)
+    +— VLAN51 (DMZ2 / SSH Bastion) [Planned]
+    +— VLAN60 (Storage) [Planned]
 ```
 
 ---
@@ -48,9 +51,9 @@ Suricata runs on OPNSense in detection-only mode (IDS) on the WAN interface. EVE
 
 - Default-deny on all VLAN interfaces
 - Explicit allowlists for all permitted inter-VLAN traffic
-- Aliases used for common host groups (Wazuh_Manager, Wazuh_Agents)
+- Aliases used extensively for host groups, VLAN subnets, and port groups, reducing rule duplication and centralizing updates to a single reference point rather than editing individual rules when an IP or port changes. This also limits what's exposed in any single rule and keeps the ruleset easier to audit.
 - Anti-spoofing and RFC1918 blocking on WAN interface
-- No inbound port forwarding rules on WAN (all external access via WireGuard or planned Cloudflare Tunnel)
+- No inbound port forwarding rules on WAN (all external access via WireGuard, Cloudflare Tunnel, or Tailscale)
 
 ---
 
@@ -73,84 +76,110 @@ The management VLAN carries Proxmox node management traffic and OPNSense managem
 | Host | IP Range |
 |------|----------|
 | OPNSense (management) | 10.0.0.1 |
-| pve-lab | 10.0.0.10 |
+| pve-gateway | 10.0.0.10 |
 | pve-services | 10.0.0.11 |
 | pve-env1 | 10.0.0.12 |
-| pve-SOC | 10.0.0.13 |
+| pve-env2 | 10.0.0.13 |
 
-**Firewall policy:** Management VLAN access restricted to administrator subnet. No unsolicited inbound from other VLANs.
+**Firewall policy:** Management VLAN access restricted to administrator subnet. No unsolicited inbound from other VLANs. Root SSH login is disabled on all Proxmox nodes; access requires a non-root account.
 
 ---
 
 ### VLAN10 — SOC
 
-Dedicated to the SOC stack. Contains the ELK Stack VM and Wazuh Manager VM only. No other services run in this VLAN.
+This VLAN hosts the SOC stack: detection and log analysis (ELK, Wazuh), alert automation (Shuffle SOAR), and incident case management (DFIR-IRIS).
 
 | Host | IP |
 |------|----|
 | soc-stack (VM 600) | 10.0.10.10 |
 | wazuh-manager (VM 601) | 10.0.10.11 |
+| soar-host (VM 602) | 10.0.10.12 |
+| pve-iris (VM 604) | 10.0.10.13 |
 
-**Firewall policy:** Agents on other VLANs may reach wazuh-manager on TCP/UDP 1514-1515 for log shipping. SOC DNS permitted TCP/UDP 53. LAN SSH to wazuh-manager permitted on TCP 22 for agent management. No unsolicited inbound from other VLANs.
+**Firewall policy:** SOC net has general outbound access on HTTP/HTTPS (80/443). DNS is restricted to OPNSense as the only permitted resolver; all other DNS destinations are blocked. LAN SSH is permitted to wazuh-manager only (TCP 22) for agent management, and wazuh-manager itself is permitted agentless SSH back to OPNSense. Wazuh agents on VLAN10 reach wazuh-manager on TCP/UDP 1514-1515. soar-host and pve-iris do not yet have dedicated firewall rules beyond the general SOC net outbound policy.
 
-**Log flow:** OPNSense Suricata EVE JSON → Logstash (port 5144) → Elasticsearch. Wazuh agent alerts → Filebeat → Elasticsearch.
-
----
-
-### VLAN20/30 — Trusted LAN / Services
-
-Production self-hosted services run in VLAN20 and VLAN30. Docker workloads run on pve-env1 (VLAN20). The internal PKI and supporting VMs run on pve-services (VLAN30).
-
-| Host | IP | VLAN |
-|------|----|------|
-| services-host (VM 200) | 10.0.20.30 | VLAN20 |
-| kalshi-mm (VM 290) | 10.0.20.50 | VLAN20 |
-| services-host2 (VM 700) | 10.0.20.31 | VLAN20 |
-| ubuntu (VM 401) | 10.0.30.x | VLAN30 |
-| pve-ca-root (VM 500) | 10.0.30.x | VLAN30 |
-| pve-ca-intermediate (VM 501) | 10.0.30.x | VLAN30 |
-
-**Firewall policy:** Outbound internet permitted. No unsolicited inbound from other VLANs. VLAN20 and VLAN30 are isolated from each other except for explicit allowlisted traffic.
+**Log flow:** OPNSense Suricata EVE JSON → Logstash (port 5144) → Elasticsearch. Wazuh agent alerts → Filebeat → Elasticsearch. Heimdall rsyslog → Logstash (port 5146) → Elasticsearch.
 
 ---
 
-### VLAN40/41 — Security Lab
+### VLAN20 — Services
 
-The security lab is fully isolated from all production VLANs. VLAN40 hosts the Kali Linux attack VM and the Jetson Orin Nano. VLAN41 hosts vulnerable target VMs (Metasploitable2, DVWA, malware-win11).
+| Host | IP |
+|------|----|
+| services-host (VM 200) | 10.0.20.30 |
 
-| Host | IP | VLAN |
-|------|----|------|
-| kali-attack (VM 300) | 10.99.0.x | VLAN40 |
-| Jetson Orin Nano | 10.99.0.100 | VLAN40 |
-| metasploitable2 (VM 301) | 10.99.1.x | VLAN41 |
-| dvwa (VM 302) | 10.99.1.x | VLAN41 |
-| malware-win11 (VM 400) | 10.99.1.x | VLAN41 |
+Running on services-host: Vaultwarden, Internal NPM, Gitea, Stremio, Portainer, Uptime Kuma.
 
-**Firewall policy:** VLAN41 is fully air-gapped — no internet access and no route to any other VLAN. VLAN40 has restricted outbound internet for tool updates only. No route from either lab VLAN to production, services, SOC, or management VLANs.
+**Firewall policy:** Outbound internet permitted (HTTP/HTTPS via alias). DNS restricted to Heimdall's Pi-hole (192.168.100.1) as the only permitted resolver; all other DNS destinations blocked. NTP outbound permitted. Wazuh agents on VLAN20 reach wazuh-manager on TCP/UDP 1514-1515. Internal NPM has specific allowlisted reverse-proxy targets: Kibana (10.0.10.10:5601), Proxmox WebUI (all nodes, port 8006), services-host itself, pve-iris (443), and Authentik (9000, for SSO reverse proxy). Services VLAN can reach Authentik directly (port 9000) and soar-host (HTTP/HTTPS ports). Explicit block on Services-to-internal-VLANs traffic beyond these allowlisted paths (RFC1918 block), with general outbound internet still permitted.
 
 ---
 
-### VLAN50 — DMZ
+### VLAN30 — Trust Infrastructure
 
-The DMZ will host all public-facing services. Traffic will enter exclusively via Cloudflare Tunnel — no inbound port forwarding will be configured on the WAN interface. Nginx Proxy Manager will handle reverse proxying from the tunnel to internal services.
+| Host | IP |
+|------|----|
+| pve-ca-root (Root-CA) | 10.0.30.x |
+| pve-ca-intermediate (Intermediate-CA) | 10.0.30.x |
+| Authentik (LXC 2201) | 10.0.30.x |
+| pve-int-stepca (LXC 511) | 10.0.30.x |
 
-**Planned services:** Self-Hosted Website, Stoat Messenger, Nginx Proxy Manager
-
-**Planned firewall policy:** Inbound 80/443 via Cloudflare Tunnel only. Explicit allowlist for DMZ to internal services where required. No route from DMZ to management, SOC, lab, or storage VLANs.
+Root-CA and Intermediate-CA form the internal two-tier PKI, issuing certs for internal services. Authentik serves as the self-hosted IdP/SSO. pve-int-stepca runs step-ca in Docker, planned to take over Intermediate CA duties from the raw OpenSSL setup once configured.
 
 ---
 
-### VLAN51 — SSH Bastion (Planned)
+### VLAN40 — Security Lab 1
 
-A dedicated hardened VM will serve as the single SSH entry point for all internal nodes. Direct SSH from workstations to internal nodes will be blocked at the firewall once the bastion is live. All SSH access will route through the bastion via ProxyJump.
+| Host | IP |
+|------|----|
+| kali-attack (VM 300) | 10.99.0.x |
+| metasploitable2 (VM 301) | 10.99.0.x |
+| dvwa (VM 302) | 10.99.0.x |
+| Jetson Orin Nano | 10.99.0.100 |
 
-**Planned firewall policy:** Bastion IP is the only permitted SSH source to all internal VLANs. Workstation-to-internal SSH blocked.
+All hosts sit flat on VLAN40, so Kali can reach Metasploitable2 and DVWA directly with no additional firewall rule required.
+
+**Firewall policy:** Restricted outbound internet for tool updates only. No route to production, services, trust infrastructure, SOC, or management VLANs.
+
+---
+
+### VLAN41 — Security Lab 2
+
+| Host | IP |
+|------|----|
+| malware-win11 (VM 400) | 10.99.1.x |
+
+**Firewall policy:** Fully air-gapped. No internet access, no route to or from any other VLAN.
+
+---
+
+### VLAN50 — DMZ1
+
+| Host | IP |
+|------|----|
+| npm-dmz (public-facing reverse proxy) | 10.0.50.x |
+| ntfy | 10.0.50.x |
+| Self-Hosted Website | Planned |
+| Stoat Messenger | Planned |
+
+npm-dmz is live and handles reverse proxying from Cloudflare Tunnel to internal services (admin UI on port 81).
+
+**Firewall policy:** Inbound 80/443 via Cloudflare Tunnel only. No route from DMZ to management, SOC, trust infrastructure, lab, or storage VLANs, unless explicitly allowlisted.
+
+---
+
+### VLAN51 — DMZ2
+
+| Host | IP |
+|------|----|
+| SSH Bastion | Planned |
+
+**Firewall policy:** Planned as the single SSH entry point for all internal nodes. Bastion IP will be the only permitted SSH source to internal VLANs once live; direct workstation-to-internal SSH will be blocked at that point.
 
 ---
 
 ### VLAN60 — Storage
 
-The storage VLAN carries NAS traffic. No internet access. Management access only from the management VLAN.
+Planned. No devices currently deployed. Will carry NAS traffic once built, with no internet access and management access restricted to the management VLAN.
 
 ---
 
@@ -168,9 +197,11 @@ All VMs use Pi-hole as their DNS resolver. The Pi-hole is at 192.168.100.1 on th
 
 ## Remote Access
 
-Remote administration is handled entirely via WireGuard VPN hosted on Heimdall. No management interfaces are exposed directly to the internet. The WireGuard endpoint is reachable via Heimdall's real public IPv4.
+Remote administration currently runs through Heimdall's WireGuard VPN, kept as one of three parallel access paths.
 
-Cloudflare Tunnels are planned for public-facing web services only and will not carry management traffic.
+Cloudflare Tunnels handle both public web traffic and an admin path (Cloudflare Zero Trust / WARP client), routing to the planned SSH Bastion on VLAN51. The bastion's auth design requires two layers: WARP client enrollment via Authentik as IdP, plus step-ca issuing short-lived SSH certificates via its own OIDC login against Authentik, replacing a static SSH key.
+
+Tailscale serves as a break-glass path if the bastion is down. Heimdall's WireGuard serves as a further backup if both the bastion and Tailscale are down. None of these three paths route to each other, Tailscale and WireGuard have no route to or from the bastion, and the bastion has no route to them.
 
 ---
 
@@ -178,14 +209,15 @@ Cloudflare Tunnels are planned for public-facing web services only and will not 
 
 | Flow | Path | Status |
 |------|------|--------|
-| Internet → internal services | WireGuard VPN only | Live |
-| Internet → public services | Cloudflare Tunnel → NPM → DMZ | Planned |
+| Internet → internal services (admin) | Cloudflare Tunnel (Admin) / WireGuard / Tailscale | Live |
+| Internet → public services | Cloudflare Tunnel (Web) → npm-dmz → DMZ | Live |
 | Wazuh agents → manager | TCP/UDP 1514-1515, all VLANs → VLAN10 | Live |
 | OPNSense logs → ELK | Syslog → Logstash port 5144 → Elasticsearch | Live |
 | Suricata EVE → ELK | EVE JSON → Logstash → Elasticsearch | Live |
-| Internal services → PKI | VLAN20/30 → VLAN30 CA VMs | Live |
-| Admin workstation → nodes | WireGuard → VLAN1 management | Live |
-| Admin workstation → nodes (SSH) | WireGuard → VLAN51 Bastion → internal nodes | Planned |
+| Heimdall rsyslog → ELK | Syslog → Logstash port 5146 → Elasticsearch | Live |
+| Internal services → PKI | Services (VLAN20) / trust infrastructure (VLAN30) → CA VMs | Live |
+| Admin workstation → nodes | WireGuard / Tailscale / Cloudflare Zero Trust → VLAN1 management | Live |
+| Admin workstation → nodes (SSH) | Bastion (VLAN51) → internal nodes, WARP + step-ca cert auth | Planned |
 
 ---
 
@@ -194,4 +226,4 @@ Cloudflare Tunnels are planned for public-facing web services only and will not 
 - [Infrastructure](infrastructure.md)
 - [SOC Stack](soc-stack.md)
 - [Internal PKI](pki.md)
-- [SOP: Security Hardening](sop-sec-001.md)
+- [Security Lab](security-lab.md)

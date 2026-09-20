@@ -2006,3 +2006,5 @@ With these lessons learned and procedures in place, future network changes can b
 **Recovery Status:** PENDING (requires physical console)  
 **VLAN Implementation Status:** INCOMPLETE (on hold pending recovery)  
 **Next Steps:** Physical console access to restore pve-gateway network connectivity
+
+**Recovery documented in:** [runbook-vlan-recovery.md](runbook-vlan-recovery.md)
