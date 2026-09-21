@@ -42,7 +42,7 @@ Full topology documentation: [docs/network.md](docs/network.md)
 | 40 | Security Lab 1 | Kali, Metasploitable2, DVWA, Jetson (flat network) | Live |
 | 41 | Security Lab 2 | Windows 11 malware sandbox (fully air-gapped) | Live |
 | 50 | DMZ1 | Public-facing services via Cloudflare Tunnel | Live |
-| 51 | DMZ2 / SSH Bastion | Hardened single SSH entry point | Planned |
+| 51 | DMZ2 / SSH Bastion | Hardened single SSH entry point | Live |
 | 60 | Storage | NAS appliance | Planned |
 
 ---
@@ -82,6 +82,8 @@ Full topology documentation: [docs/network.md](docs/network.md)
 | pve-ca-intermediate (VM 501) | pve-services | VLAN30 | Intermediate CA | Live |
 | Authentik (LXC 2201) | pve-services | VLAN30 | Self-hosted IdP/SSO | Live |
 | pve-int-stepca (LXC 511) | pve-services | VLAN30 | step-ca (Docker-in-LXC), planned Intermediate CA replacement | In progress |
+| pve-bastion (LXC 2202) | pve-services | VLAN51 | SSH Bastion, WARP-based Zero Trust access | In progress |
+| pve-authtunnel (LXC 2100) | pve-services | VLAN50 | Dedicated Cloudflare Tunnel publishing Authentik for Zero Trust auth | Live |
 | kali-attack (VM 300) | pve-gateway | VLAN40 | Penetration testing | Live |
 | metasploitable2 (VM 301) | pve-gateway | VLAN40 | Vulnerable target | Live |
 | dvwa (VM 302) | pve-gateway | VLAN40 | Vulnerable web app | Live |
@@ -148,7 +150,7 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 
 | Item | Description |
 |---|---|
-| VLAN51 SSH Bastion | Hardened single-entry SSH gateway with two-layer MFA (VPN client enrollment via IdP, plus short-lived certificate-based SSH auth), replacing direct node access |
+| SSH Bastion enrollment completion | WARP Zero Trust device enrollment is configured end to end but currently blocked by a browser-side QUIC protocol error on the final authorize step |
 | Self-Hosted Website | Personal site and portfolio hosted in DMZ |
 | Stoat Messenger | Self-hosted messaging |
 | step-ca migration | Complete cutover of the Intermediate CA from raw OpenSSL to step-ca |
@@ -171,122 +173,36 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 
 ### Standard Operating Procedures
 
-| Document | Description |
-|---|---|
-| [docs/sop/sop-vlan-implementation.md](docs/sop/sop-vlan-implementation.md) | SOP: VLAN Implementation with OPNSense and Managed Switch |
+[docs/sop/](docs/sop/)
 
 ### Runbooks
 
 Task-level, repeatable procedures for operating each piece of software in this stack, distinct from the Incidents and Sessions below, which are historical records rather than reusable procedures.
 
-**OPNSense** — [docs/runbooks/opnsense/](docs/runbooks/opnsense/)
-
-| Document | Description |
-|---|---|
-| [add-firewall-rule.md](docs/runbooks/opnsense/add-firewall-rule.md) | Add a firewall rule |
-| [create-manage-aliases.md](docs/runbooks/opnsense/create-manage-aliases.md) | Create and manage aliases |
-| [add-vlan-interface.md](docs/runbooks/opnsense/add-vlan-interface.md) | Add a VLAN interface end-to-end |
-| [configure-suricata-ids.md](docs/runbooks/opnsense/configure-suricata-ids.md) | Configure and operate Suricata IDS |
-| [unbound-dns-forwarding.md](docs/runbooks/opnsense/unbound-dns-forwarding.md) | Unbound DNS query forwarding |
-| [check-apply-updates.md](docs/runbooks/opnsense/check-apply-updates.md) | Check and apply firmware updates |
-| [agentless-ssh-monitoring-setup.md](docs/runbooks/opnsense/agentless-ssh-monitoring-setup.md) | Agentless SSH monitoring setup (Wazuh integration) |
-
-**Proxmox** — [docs/runbooks/proxmox/](docs/runbooks/proxmox/)
-
-| Document | Description |
-|---|---|
-| [create-vm.md](docs/runbooks/proxmox/create-vm.md) | Create a VM |
-| [create-lxc.md](docs/runbooks/proxmox/create-lxc.md) | Create an LXC |
-| [troubleshoot-cluster-quorum.md](docs/runbooks/proxmox/troubleshoot-cluster-quorum.md) | Troubleshoot cluster quorum (Corosync) |
-
-**Authentik** — [docs/runbooks/authentik/](docs/runbooks/authentik/)
-
-| Document | Description |
-|---|---|
-| [authentik-add-application.md](docs/runbooks/authentik/authentik-add-application.md) | Add an application (proxy provider / forward auth) |
-| [authentik-configure-outpost.md](docs/runbooks/authentik/authentik-configure-outpost.md) | Configure an outpost |
-| [authentik-manage-users.md](docs/runbooks/authentik/authentik-manage-users.md) | Manage users |
-| [authentik-manage-permissions.md](docs/runbooks/authentik/authentik-manage-permissions.md) | Manage permissions (groups, roles, application bindings) |
-| [authentik-enforce-mfa.md](docs/runbooks/authentik/authentik-enforce-mfa.md) | Enforce MFA |
-| [authentik-backup-restore.md](docs/runbooks/authentik/authentik-backup-restore.md) | Backup and restore |
-
-**ELK** — [docs/runbooks/elk/](docs/runbooks/elk/)
-
-| Document | Description |
-|---|---|
-| [add-log-source-pipeline.md](docs/runbooks/elk/add-log-source-pipeline.md) | Add a log source / pipeline |
-| [configure-tls-elasticsearch-kibana.md](docs/runbooks/elk/configure-tls-elasticsearch-kibana.md) | Configure TLS (Elasticsearch/Kibana) |
-| [manage-ilm-retention.md](docs/runbooks/elk/manage-ilm-retention.md) | Manage ILM retention |
-| [troubleshoot-log-shipping-stopped.md](docs/runbooks/elk/troubleshoot-log-shipping-stopped.md) | Troubleshoot log shipping stopped |
-| [build-kibana-lens-visualization.md](docs/runbooks/elk/build-kibana-lens-visualization.md) | Build a Kibana Lens visualization |
-| [import-configure-wazuh-dashboards.md](docs/runbooks/elk/import-configure-wazuh-dashboards.md) | Import/configure Wazuh dashboards |
-
-**Nginx Proxy Manager** — [docs/runbooks/npm/](docs/runbooks/npm/)
-
-| Document | Description |
-|---|---|
-| [add-proxy-host.md](docs/runbooks/npm/add-proxy-host.md) | Add a proxy host |
-| [configure-tls-cert.md](docs/runbooks/npm/configure-tls-cert.md) | Configure TLS certificates |
-| [troubleshoot-proxy-routing.md](docs/runbooks/npm/troubleshoot-proxy-routing.md) | Troubleshoot proxy routing |
-
-**Pi-hole** — [docs/runbooks/pihole/](docs/runbooks/pihole/)
-
-| Document | Description |
-|---|---|
-| [add-local-dns-record.md](docs/runbooks/pihole/add-local-dns-record.md) | Add a local DNS record |
-| [manage-blocklists.md](docs/runbooks/pihole/manage-blocklists.md) | Manage blocklists |
-| [troubleshoot-primary-dns-failover.md](docs/runbooks/pihole/troubleshoot-primary-dns-failover.md) | Primary DNS failover / outage contingency |
-
-**Internal PKI** — [docs/runbooks/pki/](docs/runbooks/pki/)
-
-| Document | Description |
-|---|---|
-| [issue-leaf-certificate.md](docs/runbooks/pki/issue-leaf-certificate.md) | Issue a leaf certificate |
-| [revoke-certificate.md](docs/runbooks/pki/revoke-certificate.md) | Revoke a certificate |
-| [bring-root-ca-online.md](docs/runbooks/pki/bring-root-ca-online.md) | Bring the Root CA online |
-| [distribute-trust-store.md](docs/runbooks/pki/distribute-trust-store.md) | Distribute the trust store |
+- [docs/runbooks/opnsense/](docs/runbooks/opnsense/)
+- [docs/runbooks/proxmox/](docs/runbooks/proxmox/)
+- [docs/runbooks/authentik/](docs/runbooks/authentik/)
+- [docs/runbooks/elk/](docs/runbooks/elk/)
+- [docs/runbooks/npm/](docs/runbooks/npm/)
+- [docs/runbooks/pihole/](docs/runbooks/pihole/)
+- [docs/runbooks/pki/](docs/runbooks/pki/)
+- [docs/runbooks/cloudflare-tunnel/](docs/runbooks/cloudflare-tunnel/)
 
 ### SOC Operational Procedures
 
-| Document | Description |
-|---|---|
-| [docs/soc/soc-phase1-baseline.md](docs/soc/soc-phase1-baseline.md) | Phase 1: Establishing a SIEM Baseline |
-| [docs/soc/soc-phase2-tuning.md](docs/soc/soc-phase2-tuning.md) | Phase 2: Noise Reduction and Rule Tuning |
-| [docs/soc/soc-phase3-triage.md](docs/soc/soc-phase3-triage.md) | Phase 3: Alert Triage Workflow |
-| [docs/soc/soc-phase4-iris.md](docs/soc/soc-phase4-iris.md) | Phase 4: Case Management with DFIR-IRIS |
-| [docs/soc/soc-phase5-response.md](docs/soc/soc-phase5-response.md) | Phase 5: Active Response and Forensic Collection |
+[docs/soc/](docs/soc/)
 
 ### SOC Implementation Records
 
-| Document | Description |
-|---|---|
-| [docs/soc/Implementation/soc-phase1-baseline-report-public.md](docs/soc/Implementation/soc-phase1-baseline-report-public.md) | Phase 1 Baseline Report — April 2026 |
-| [docs/soc/Implementation/soc-phase2-session-summary-public.md](docs/soc/Implementation/soc-phase2-session-summary-public.md) | Phase 2 Session Summary — April 2026 |
-| [docs/soc/Implementation/soc-phase2.5-midweek-state.md](docs/soc/Implementation/soc-phase2.5-midweek-state.md) | Phase 2.5 Midweek Baseline State Report — April 28, 2026 |
-| [docs/soc/Implementation/soc-phase2.5-may2-closeout.md](docs/soc/Implementation/soc-phase2.5-may2-closeout.md) | Phase 2.5 Close-Out Report — May 2, 2026 |
-| [docs/soc/Implementation/soc-phase2-completion-signoff.md](docs/soc/Implementation/soc-phase2-completion-signoff.md) | Phase 2 Completion Sign-Off — May 2, 2026 |
+[docs/soc/Implementation/](docs/soc/Implementation/)
 
 ### Incidents
 
-| Document | Description |
-|---|---|
-| [docs/incidents/incident-review-vlan-failure-postmortem.md](docs/incidents/incident-review-vlan-failure-postmortem.md) | Post-mortem: VLAN Implementation Failure — January 2026 |
-| [docs/incidents/incident-review-vlan-recovery.md](docs/incidents/incident-review-vlan-recovery.md) | Recovery: VLAN Implementation Continuation |
-| [docs/incidents/incident-review-vlan-connectivity-fixes-jan2026.md](docs/incidents/incident-review-vlan-connectivity-fixes-jan2026.md) | Incident: VLAN Connectivity Troubleshooting — January 2026 |
-| [docs/incidents/incident-review-vlan-security-lab-troubleshooting.md](docs/incidents/incident-review-vlan-security-lab-troubleshooting.md) | Incident: Security Lab VLAN Troubleshooting |
-| [docs/incidents/incident-review-march30.md](docs/incidents/incident-review-march30.md) | Incident Review: SOC DNS and Firewall Gaps — March 2026 |
-| [docs/incidents/incident-review-may9.md](docs/incidents/incident-review-may9.md) | Incident Review — May 9, 2026 |
-| [docs/incidents/incident-review-sept14.md](docs/incidents/incident-review-sept14.md) | Incident Review — September 14, 2026 |
-| [docs/incidents/incident-review-ntfy-authentik-outpost-fix-sept15-26.md](docs/incidents/incident-review-ntfy-authentik-outpost-fix-sept15-26.md) | Incident: ntfy Authentik Outpost Fix — September 15, 2026 |
+[docs/incidents/](docs/incidents/)
 
 ### Sessions
 
-| Document | Description |
-|---|---|
-| [docs/sessions/session-proxmox-subnet-migration.md](docs/sessions/session-proxmox-subnet-migration.md) | Session: Proxmox Subnet Migration — 192.168.100.x to 10.0.0.x |
-| [docs/sessions/session-log-march30.md](docs/sessions/session-log-march30.md) | Session Log: SOC TLS Hardening and Wazuh Deployment — March 2026 |
-| [docs/sessions/session-log-sept13.md](docs/sessions/session-log-sept13.md) | Session Log — September 13, 2026 |
-| [docs/sessions/session-logstash-tls-hardening.md](docs/sessions/session-logstash-tls-hardening.md) | Session: Logstash TLS Certificate Verification Hardening — May 2026 |
+[docs/sessions/](docs/sessions/)
 
 ---
 
