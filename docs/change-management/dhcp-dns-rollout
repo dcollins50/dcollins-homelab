@@ -1,0 +1,76 @@
+# DHCP and DNS Consolidation
+
+**Status:** Planned  
+**Planned:** September 23, 2026  
+**Not yet started**
+
+---
+
+## Goal
+
+Move from a static-addressing-only environment to proper DHCP with reservations, and consolidate DNS so internal names live in one place instead of split across Pi-hole and OPNSense Unbound.
+
+Today every host has a hand-configured static IP. That works until something needs to move, get reprovisioned, or be automated. The real gains from DHCP are one central place for addresses, no per-host netplan edits, and a provisioning flow that can eventually be automated.
+
+---
+
+## DNS Architecture
+
+**Decision:** Unbound on OPNSense becomes the authoritative resolver for all VLANs. Pi-hole on Heimdall stays running, but only for domain blocking. Hosts see Unbound on their VLAN gateway as their resolver. Unbound forwards non-internal names to Pi-hole for blocking, and Pi-hole forwards upstream from there.
+
+**Internal domain:** `.internal` (ICANN reserved permanently in July 2024 for private-use applications). The zone apex will be `homelab.internal`, so existing names map one-to-one (`x.homelab.local` becomes `x.homelab.internal`). Pi-hole's `homelab.local` records migrate into Unbound host overrides, then get removed from Pi-hole so nothing answers twice.
+
+**Pi-hole failure mode:** Fail open with alerts. Unbound uses `forward-first` so a failed Pi-hole falls back to normal recursion. Uptime Kuma monitors Pi-hole reachability and a canary check verifies that a domain Pi-hole always blocks does not resolve normally, which catches silent bypass.
+
+**Consequence:** Pi-hole will only see OPNSense as a client. Per-client stats and group rules there lose meaning. Per-client DNS visibility moves to Unbound query logging, shipped to Elasticsearch if needed.
+
+---
+
+## DHCP Architecture
+
+**Server:** Kea DHCPv4 on OPNSense. ISC DHCP is end-of-life. Kea supports reservations, API-driven configuration, and DDNS for forward DNS registration.
+
+**Three tiers:**
+
+| Tier | What | Why |
+|---|---|---|
+| Static forever | OPNSense, switch, four Proxmox nodes, Heimdall, anything providing DNS or DHCP | Corosync ring addresses live in `corosync.conf` and cannot move. Network gear has no DHCP client. |
+| Reservation by MAC | All VMs and LXCs | Same address every boot. Firewall aliases and certificates keep working. |
+| Dynamic pool | Lab VLANs, workstations, phones, laptops | Only where unknown clients are expected. |
+
+**Address plan per /24:** `.1` gateway, `.2-.9` network gear, `.10-.99` reservations, `.100-.199` static or spare, `.200-.250` dynamic pool where needed. Existing hosts already fit this layout.
+
+**Reservation-only VLANs:** VLAN30 (Trust Infrastructure), VLAN51 (DMZBastion), and VLAN11 (AIops) get no dynamic pool.
+
+**Migration method:** Reserve what a host already has. Create the reservation with the host's current MAC and current IP, confirm it, then switch the host from static to DHCP at a quiet time. The IP never changes, so aliases, rules, and certificates are untouched.
+
+---
+
+## Phases
+
+### Phase 0: Decisions
+Finalize the zone apex (`homelab.internal`), lease times, and any VLAN-specific exceptions before touching infrastructure.
+
+### Phase 1: DNS Consolidation
+Migrate Pi-hole local records into Unbound host overrides. Repoint VLANs one at a time to use Unbound on the VLAN gateway as their resolver. Update DNS firewall rules to match. Remove duplicate records from Pi-hole after each VLAN is verified.
+
+### Phase 2: Kea Pilot on VLAN11
+Enable Kea on VLAN11 (AIops) only. One reservation for the Jetson Orin Nano at 10.0.11.10. No dynamic pool. Verify Kea accepts a subnet without a pool before committing to it.
+
+### Phase 3: Reservation Tier, VLAN by VLAN
+Create reservations for existing VMs and LXCs in increasing risk order: lab VLANs first, then services, SOC, DMZ, trust infrastructure, bastion last.
+
+### Phase 4: Remote Provisioning
+Proxmox templates with a fixed MAC per clone. Create the reservation and the DNS record together before the VM boots. Candidate for automation through Shuffle SOAR.
+
+### Phase 5: Hardening and Verification
+Long lease times on reservations. Alert on pool exhaustion. Reboot OPNSense once on purpose and confirm hosts keep their addresses. Include DHCP and Unbound configuration in the OPNSense backup routine.
+
+---
+
+## Risks
+
+- DHCP adds a boot dependency. Keeping Proxmox nodes and network gear static limits the blast radius.
+- A new host has an address before it has a name, because Kea reservations only sync to Unbound on restart.
+- DNS consolidation touches every host. VLAN-by-VLAN migration limits the impact of any single mistake.
+- A rogue DHCP server on a permissive VLAN could redirect hosts to a malicious resolver. Relevant to the lab VLANs where unknown VMs run.
