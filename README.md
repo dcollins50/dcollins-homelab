@@ -29,7 +29,7 @@ The network is segmented into discrete VLANs enforced at both the firewall and m
 
 ![Homelab Network Diagram](docs/network-diagram.png)
 
-Full topology documentation: [docs/network.md](docs/network.md)
+Full topology documentation: [docs/Network.md](docs/Network.md). Per-VLAN detail lives in [docs/Network/](docs/Network/).
 
 ### VLAN Summary
 
@@ -66,6 +66,8 @@ Full topology documentation: [docs/network.md](docs/network.md)
 | OPNSense (HP EliteDesk G3) | Dedicated firewall, Suricata IDS, VLAN routing |
 | TP-Link TL-SG108E | Managed switch, VLAN tagging and trunking |
 | Jetson Orin Nano | AI inference node, VLAN40, racked |
+
+Per-host detail lives in [docs/Hosts/](docs/Hosts/).
 
 ### VM Inventory
 
@@ -107,7 +109,7 @@ Dashboards:
 
 Wazuh agents are deployed across cluster endpoints. OPNSense is monitored via agentless SSH. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates.
 
-Full SOC documentation: [docs/soc-stack.md](docs/soc-stack.md)
+Full SOC documentation: [docs/SOC-Stack.md](docs/SOC-Stack.md). Phased buildout records: [docs/Projects/soc-stack-buildout/](docs/Projects/soc-stack-buildout/).
 
 ---
 
@@ -120,7 +122,7 @@ All internal services communicate over TLS using certificates issued by an inter
 - Certificates are deployed across Elasticsearch, Kibana, Wazuh, Nginx Proxy Manager, and all Proxmox nodes.
 - The Intermediate CA is migrating from raw OpenSSL to step-ca, part of a longer-term goal of building a fully self-hosted, low-cost PKI/identity stack.
 
-Full PKI documentation: [docs/pki.md](docs/pki.md)
+Full PKI documentation: [docs/PKI.md](docs/PKI.md).
 
 ---
 
@@ -142,7 +144,7 @@ Running on services-host (pve-env1, VLAN20) via Docker:
 
 The security lab runs across VLAN40 and VLAN41, fully isolated from all production VLANs. VLAN40 is a flat network hosting Kali Linux, Metasploitable2, DVWA, and the Jetson Orin Nano, with restricted outbound internet for tool updates. VLAN41 is a separate, fully air-gapped segment reserved for the Windows 11 malware analysis sandbox, with no route to or from any other VLAN, including VLAN40.
 
-Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
+Full lab documentation: [docs/Security-Lab.md](docs/Security-Lab.md).
 
 ---
 
@@ -165,44 +167,54 @@ Full lab documentation: [docs/security-lab.md](docs/security-lab.md)
 
 | Document | Description |
 |---|---|
-| [docs/network.md](docs/network.md) | Full network topology, VLAN design, and firewall architecture |
-| [docs/infrastructure.md](docs/infrastructure.md) | Proxmox cluster, node configuration, and VM layout |
-| [docs/soc-stack.md](docs/soc-stack.md) | ELK Stack and Wazuh deployment, dashboards, and agent rollout |
-| [docs/pki.md](docs/pki.md) | Internal PKI architecture, certificate issuance, and TLS deployment |
-| [docs/security-lab.md](docs/security-lab.md) | Security lab environment and penetration testing setup |
+| [docs/Network.md](docs/Network.md) | Full network topology, VLAN design, and firewall architecture |
+| [docs/Infrastructure.md](docs/Infrastructure.md) | Proxmox cluster, node configuration, and VM layout |
+| [docs/SOC-Stack.md](docs/SOC-Stack.md) | ELK Stack and Wazuh deployment, dashboards, and agent rollout |
+| [docs/PKI.md](docs/PKI.md) | Internal PKI architecture, certificate issuance, and TLS deployment |
+| [docs/Security-Lab.md](docs/Security-Lab.md) | Security lab environment and penetration testing setup |
+| [docs/Tailscale.md](docs/Tailscale.md) | Tailscale break-glass remote-admin path |
+
+### Hosts, Networks, and Decisions
+
+| Area | Description |
+|---|---|
+| [docs/Hosts/](docs/Hosts/) | Per-host notes for every node, VM, and LXC |
+| [docs/Network/](docs/Network/) | Per-VLAN detail (VLAN1 through VLAN60) |
+| [docs/Decisions/](docs/Decisions/) | Design decision records with rationale and trade-offs |
 
 ### Standard Operating Procedures
 
-[docs/sop/](docs/sop/)
+[docs/SOPs/](docs/SOPs/) — dependency-ordered, multi-tool processes (VLAN implementation, Cloudflare tunnel, SSH bastion build, VPS hardening, PKI migration, step-ca cutover, and more).
 
 ### Runbooks
 
 Task-level, repeatable procedures for operating each piece of software in this stack, distinct from the Incidents and Sessions below, which are historical records rather than reusable procedures.
 
-- [docs/runbooks/opnsense/](docs/runbooks/opnsense/)
-- [docs/runbooks/proxmox/](docs/runbooks/proxmox/)
-- [docs/runbooks/authentik/](docs/runbooks/authentik/)
-- [docs/runbooks/elk/](docs/runbooks/elk/)
-- [docs/runbooks/npm/](docs/runbooks/npm/)
-- [docs/runbooks/pihole/](docs/runbooks/pihole/)
-- [docs/runbooks/pki/](docs/runbooks/pki/)
-- [docs/runbooks/cloudflare-tunnel/](docs/runbooks/cloudflare-tunnel/)
+- [docs/Runbooks/opnsense/](docs/Runbooks/opnsense/)
+- [docs/Runbooks/proxmox/](docs/Runbooks/proxmox/)
+- [docs/Runbooks/authentik/](docs/Runbooks/authentik/)
+- [docs/Runbooks/cloudflare/](docs/Runbooks/cloudflare/)
+- [docs/Runbooks/elk/](docs/Runbooks/elk/)
+- [docs/Runbooks/wazuh/](docs/Runbooks/wazuh/)
+- [docs/Runbooks/pki/](docs/Runbooks/pki/)
+- [docs/Runbooks/npm/](docs/Runbooks/npm/)
+- [docs/Runbooks/pihole/](docs/Runbooks/pihole/)
+- [docs/Runbooks/ssh/](docs/Runbooks/ssh/)
+- [docs/Runbooks/tailscale/](docs/Runbooks/tailscale/)
+- [docs/Runbooks/dfir-iris/](docs/Runbooks/dfir-iris/)
+- [docs/Runbooks/gitea/](docs/Runbooks/gitea/), [docs/Runbooks/portainer/](docs/Runbooks/portainer/), [docs/Runbooks/uptime-kuma/](docs/Runbooks/uptime-kuma/), [docs/Runbooks/vaultwarden/](docs/Runbooks/vaultwarden/), [docs/Runbooks/linux/](docs/Runbooks/linux/)
 
-### SOC Operational Procedures
+### Projects
 
-[docs/soc/](docs/soc/)
-
-### SOC Implementation Records
-
-[docs/soc/Implementation/](docs/soc/Implementation/)
+[docs/Projects/](docs/Projects/) — multi-session build efforts, including the SOC stack buildout and its implementation records, the AIops VLAN work, and the DHCP/DNS rollout.
 
 ### Incidents
 
-[docs/incidents/](docs/incidents/)
+[docs/Incidents/](docs/Incidents/) — postmortems and troubleshooting records.
 
 ### Sessions
 
-[docs/sessions/](docs/sessions/)
+[docs/Sessions/](docs/Sessions/) — dated build/work session logs.
 
 ---
 
@@ -210,4 +222,4 @@ Task-level, repeatable procedures for operating each piece of software in this s
 
 - CompTIA A+ (March 2026)
 - CompTIA Network+ (June 2026)
-- B.S. Cybersecurity and Information Assurance, Western Governors University (Expected November 2026)
+- B.S. Cybersecurity and Information Assurance, Western Governors University (Expected November 2027)
