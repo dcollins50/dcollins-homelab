@@ -74,9 +74,9 @@ Per-host detail lives in [docs/Hosts/](docs/Hosts/).
 | VM | Host | Network | Role | Status |
 |---|---|---|---|---|
 | services-host (VM 200) | pve-env1 | VLAN20 | Docker Host 1 | Live |
-| soar-host (VM 602) | pve-env1 | VLAN10 | Shuffle SOAR — alert automation | Live |
-| docker-host.template (VM 603) | pve-env1 | — | Template for cloning new Docker-host VMs | Template |
-| pve-iris (VM 604) | pve-env1 | VLAN10 | DFIR-IRIS — incident case tracking | Live |
+| soar-host (VM 602) | pve-env1 | VLAN10 | Shuffle SOAR, alert automation | Live |
+| docker-host.template (VM 603) | pve-env1 | n/a | Template for cloning new Docker-host VMs | Template |
+| pve-iris (VM 604) | pve-env1 | VLAN10 | DFIR-IRIS, incident case tracking | Live |
 | soc-stack (VM 600) | pve-env2 | VLAN10 | Elasticsearch, Logstash, Kibana | Live |
 | wazuh-manager (VM 601) | pve-env2 | VLAN10 | Wazuh SIEM manager | Live |
 | ubuntu (VM 401) | pve-services | VLAN30 | General services | Live |
@@ -184,37 +184,41 @@ Full lab documentation: [docs/Security-Lab.md](docs/Security-Lab.md).
 
 ### Standard Operating Procedures
 
-[docs/SOPs/](docs/SOPs/) — dependency-ordered, multi-tool processes (VLAN implementation, Cloudflare tunnel, SSH bastion build, VPS hardening, PKI migration, step-ca cutover, and more).
+[docs/SOPs/](docs/SOPs/): dependency-ordered, multi-tool processes (VLAN implementation, Cloudflare tunnel, SSH bastion build, VPS hardening, PKI migration, step-ca cutover, and more).
 
 ### Runbooks
 
-Task-level, repeatable procedures for operating each piece of software in this stack, distinct from the Incidents and Sessions below, which are historical records rather than reusable procedures.
+Task-level, repeatable procedures for operating each piece of software in this stack, distinct from the Incidents and Sessions below, which are historical records rather than reusable procedures. Each folder holds the individual procedures for that tool.
 
-- [docs/Runbooks/opnsense/](docs/Runbooks/opnsense/)
-- [docs/Runbooks/proxmox/](docs/Runbooks/proxmox/)
-- [docs/Runbooks/authentik/](docs/Runbooks/authentik/)
-- [docs/Runbooks/cloudflare/](docs/Runbooks/cloudflare/)
-- [docs/Runbooks/elk/](docs/Runbooks/elk/)
-- [docs/Runbooks/wazuh/](docs/Runbooks/wazuh/)
-- [docs/Runbooks/pki/](docs/Runbooks/pki/)
-- [docs/Runbooks/npm/](docs/Runbooks/npm/)
-- [docs/Runbooks/pihole/](docs/Runbooks/pihole/)
-- [docs/Runbooks/ssh/](docs/Runbooks/ssh/)
-- [docs/Runbooks/tailscale/](docs/Runbooks/tailscale/)
-- [docs/Runbooks/dfir-iris/](docs/Runbooks/dfir-iris/)
-- [docs/Runbooks/gitea/](docs/Runbooks/gitea/), [docs/Runbooks/portainer/](docs/Runbooks/portainer/), [docs/Runbooks/uptime-kuma/](docs/Runbooks/uptime-kuma/), [docs/Runbooks/vaultwarden/](docs/Runbooks/vaultwarden/), [docs/Runbooks/linux/](docs/Runbooks/linux/)
+- [OPNSense](docs/Runbooks/opnsense/)
+- [Proxmox](docs/Runbooks/proxmox/)
+- [Authentik](docs/Runbooks/authentik/)
+- [Cloudflare](docs/Runbooks/cloudflare/)
+- [ELK Stack](docs/Runbooks/elk/)
+- [Wazuh](docs/Runbooks/wazuh/)
+- [PKI](docs/Runbooks/pki/)
+- [Nginx Proxy Manager](docs/Runbooks/npm/)
+- [Pi-hole](docs/Runbooks/pihole/)
+- [SSH](docs/Runbooks/ssh/)
+- [Tailscale](docs/Runbooks/tailscale/)
+- [DFIR-IRIS](docs/Runbooks/dfir-iris/)
+- [Gitea](docs/Runbooks/gitea/)
+- [Portainer](docs/Runbooks/portainer/)
+- [Uptime Kuma](docs/Runbooks/uptime-kuma/)
+- [Vaultwarden](docs/Runbooks/vaultwarden/)
+- [Linux](docs/Runbooks/linux/)
 
 ### Projects
 
-[docs/Projects/](docs/Projects/) — multi-session build efforts, including the SOC stack buildout and its implementation records, the AIops VLAN work, and the DHCP/DNS rollout.
+[docs/Projects/](docs/Projects/): multi-session build efforts, including the SOC stack buildout and its implementation records, the AIops VLAN work, and the DHCP/DNS rollout.
 
 ### Incidents
 
-[docs/Incidents/](docs/Incidents/) — postmortems and troubleshooting records.
+[docs/Incidents/](docs/Incidents/): postmortems and troubleshooting records.
 
 ### Sessions
 
-[docs/Sessions/](docs/Sessions/) — dated build/work session logs.
+[docs/Sessions/](docs/Sessions/): dated build/work session logs.
 
 ---
 
