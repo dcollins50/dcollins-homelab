@@ -11,11 +11,12 @@ Repurposed (Sep 14, 2026) as dedicated trust infrastructure VLAN, housing both C
 ## Hosts
 | Host | IP |
 |------|----|
-| [[pve-ca-root]] (VM 500) | 10.0.30.21 |
-| [[pve-ca-intermediate]] (VM 501) | 10.0.30.22 |
-| [[authentik]] (LXC 2201) | 10.0.30.10 |
-| [[pve-int-stepca]] (LXC 511) | 10.0.30.20 |
-| [[ubuntu-401]] (VM 401) | 10.0.30.40 |
+| [[pve-ca-root]] (VM 500) | 10.0.30.x |
+| [[pve-ca-intermediate]] (VM 501) | 10.0.30.x |
+| [[authentik]] (LXC 2201) | 10.0.30.x |
+| [[pve-int-stepca]] (LXC 511) | 10.0.30.x |
+| [[ubuntu-401]] (VM 401) | 10.0.30.x |
+| [[ansible-lab]] (LXC 1200, planned) | 10.0.30.x |
 
 [[pve-ca-root]] and [[pve-ca-intermediate]] form the internal two-tier PKI. [[authentik]] is the self-hosted IdP/SSO. [[pve-int-stepca]] runs step-ca in Docker, planned to take over Intermediate CA duties.
 

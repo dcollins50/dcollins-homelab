@@ -14,6 +14,8 @@ tool: opnsense
 
 ---
 
+> **Status, Oct 4, 2026:** this check is not currently working. It logs in as root and root SSH is disabled on OPNSense. See [[session-2026-10-04-opnsense-25-7-11-patch]].
+
 ## When to use this
 
 OPNSense can't run a native Wazuh agent (it's not a general-purpose Linux host Wazuh supports directly), so it's monitored via Wazuh's agentless SSH capability instead: the Wazuh Manager periodically SSHes in and runs integrity/config checks rather than a resident agent reporting continuously. Use this runbook for initial setup, or when the check stops working and needs re-established.
@@ -36,7 +38,7 @@ Wazuh Manager's agentless module runs on a schedule, using a locally-stored SSH 
 
 1. Ensure SSH access is enabled and reachable from the Wazuh Manager's VLAN (this requires an explicit firewall rule, see [[opnsense-add-firewall-rule|Add a Firewall Rule]], agentless SSH doesn't get an exception to default-deny).
 2. Generate or confirm an SSH keypair for the Wazuh Manager to use, and install the public key for the account the agentless check will authenticate as.
-3. **Add the account to the passlist** so the check can run its command(s) without an interactive password/passphrase prompt, e.g. an entry equivalent to:
+3. **Add the account to the passlist** (correction Oct 4, 2026: this file lives on the Wazuh manager at `/var/ossec/agentless/.passlist`, not on OPNSense) so the check can run its command(s) without an interactive password/passphrase prompt, e.g. an entry equivalent to:
    ```
    <check-account>@<opnsense-mgmt-ip> NOPASS
    ```

@@ -8,7 +8,7 @@ status: resolved
 # Incident: Services VLAN Web UIs Unreachable (Workstation Routing)
 
 **Date:** 2026-01-25
-**Systems affected:** Primary workstation (dual-homed), services-host (10.0.20.30), OPNSense
+**Systems affected:** Primary workstation (dual-homed), services-host (10.0.20.x), OPNSense
 **Duration:** ~3 hours of troubleshooting across multiple chat sessions
 **Status:** Resolved
 
@@ -20,10 +20,10 @@ Every web UI on the Services VLAN (Portainer, Pi-hole, Nginx Proxy Manager, Upti
 
 | Item | Value |
 |-|-|
-| Workstation WiFi | 192.168.1.241/24, gateway 192.168.1.254, interface metric 35 |
-| Workstation Ethernet | 10.0.0.199/24, gateway 10.0.0.1 (OPNSense LAN), interface metric 456 |
+| Workstation WiFi | 192.168.1.x/24, gateway 192.168.1.x, interface metric 35 |
+| Workstation Ethernet | 10.0.0.x/24, gateway 10.0.0.x (OPNSense LAN), interface metric 456 |
 | Services VLAN | 10.0.20.0/24 |
-| services-host | 10.0.20.30 |
+| services-host | 10.0.20.x |
 
 ## Timeline
 
@@ -33,7 +33,7 @@ Every web UI on the Services VLAN (Portainer, Pi-hole, Nginx Proxy Manager, Upti
    - Reviewed the "Allow Management to Services" rule. It was correct.
    - Added an "Allow Services to Internet" rule because Docker DNS failures showed up in journalctl. The DNS failures were a symptom, not the cause.
    - Reset OPNSense firewall states. SSH to services-host, which had been working, dropped. VNC console access was also unavailable.
-4. **Session 3:** Ran `Test-NetConnection` from PowerShell. The output showed the connection leaving from `SourceAddress: 192.168.1.241` on `InterfaceAlias: Wi-Fi`. That was the root cause.
+4. **Session 3:** Ran `Test-NetConnection` from PowerShell. The output showed the connection leaving from `SourceAddress: 192.168.1.x` on `InterfaceAlias: Wi-Fi`. That was the root cause.
 5. **Fix applied:** Added a persistent static route for 10.0.0.0/16 through the Ethernet gateway. Web UIs came back immediately.
 
 ## Root Cause
@@ -45,7 +45,7 @@ Why it had worked before this is unknown. Possible explanations recorded at the 
 ## Fix
 
 ```powershell
-route ADD 10.0.0.0 MASK 255.255.0.0 10.0.0.1 METRIC 10 -p
+route ADD 10.0.0.x MASK 255.255.0.0 10.0.0.x METRIC 10 -p
 ```
 
 `-p` makes the route persistent across reboots. Metric 10 keeps it ahead of both default routes. WiFi still handles general internet traffic and Ethernet handles everything in 10.0.0.0/16.
@@ -53,11 +53,11 @@ route ADD 10.0.0.0 MASK 255.255.0.0 10.0.0.1 METRIC 10 -p
 Verification:
 
 ```powershell
-route print | Select-String "10.0.0.0"
-Test-NetConnection -ComputerName 10.0.20.30 -Port 443
+route print | Select-String "10.0.0.x"
+Test-NetConnection -ComputerName 10.0.20.x -Port 443
 ```
 
-`SourceAddress` should read 10.0.0.199, not 192.168.1.241.
+`SourceAddress` should read 10.0.0.x, not 192.168.1.x.
 
 ## Changes made during troubleshooting
 

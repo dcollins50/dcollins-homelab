@@ -35,7 +35,7 @@ Documenting each node's individual offset instead of standardizing (e.g., a refe
 - Proxmox hosts, VMs, and LXCs (all Debian/systemd-based so far): `sudo timedatectl set-timezone UTC`, takes effect immediately, no reboot needed. Scriptable as a simple SSH loop across the fleet once the full machine list is known.
 - OPNSense is FreeBSD-based; `timedatectl` does not apply. Timezone is set via System > Settings > General in the web UI. Worth checking whether OPNSense's NTP configuration also needs adjustment at the same time.
 - Heimdall (Raspberry Pi, Debian-based) uses the same `timedatectl` approach as the Proxmox fleet.
-- Full inventory of VMs/LXCs to include hasn't been built yet; the [[homelab-soc]] VM inventory list is the starting point.
+- Full inventory of VMs/LXCs to include hasn't been built yet; the [[SOC-Stack]] VM inventory list is the starting point.
 
 ## Related
 - [[session-2026-09-25-rule-100004-confirmation]]

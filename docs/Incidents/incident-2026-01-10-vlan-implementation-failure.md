@@ -36,24 +36,24 @@ Attempted to implement VLAN segmentation for security lab virtual machines on a 
 
 **Physical Topology:**
 ```
-Internet → Home WiFi → Heimdall (Pi5 @ 192.168.100.1)
+Internet → Home WiFi → Heimdall (Pi5 @ 192.168.100.x)
     ↓
-OPNSense WAN (192.168.100.250)
+OPNSense WAN (192.168.100.x)
     ↓
-OPNSense LAN (10.0.0.1)
+OPNSense LAN (10.0.0.x)
     ↓
 Switch
     ↓
-├─ pve-gateway (10.0.0.10)
-├─ pve-services (10.0.0.11)
-├─ pve-env1 (10.0.0.12)
-├─ pve-env2 (10.0.0.13)
-└─ Workstation (10.0.0.199)
+├─ pve-gateway (10.0.0.x)
+├─ pve-services (10.0.0.x)
+├─ pve-env1 (10.0.0.x)
+├─ pve-env2 (10.0.0.x)
+└─ Workstation (10.0.0.x)
 ```
 
 **OPNSense Configuration:**
-- WAN: 192.168.100.250/24, gateway 192.168.100.1
-- LAN: 10.0.0.1/24
+- WAN: 192.168.100.x/24, gateway 192.168.100.x
+- LAN: 10.0.0.x/24
 - Firewall rules: Default allow LAN to any
 - No VLANs configured
 
@@ -64,14 +64,14 @@ Switch
 - All nodes accessible via SSH and WebUI
 
 **Security Lab VMs (All on pve-gateway, powered off):**
-- VM 300 (Kali-attack): Configured for 10.99.0.10/24
-- VM 301 (metasploitable2): Configured for 10.99.0.20/24
-- VM 302 (DVWA): Configured for 10.99.0.30/24
-- VM 400 (malware-win11): Configured for 10.98.0.10/24
+- VM 300 (Kali-attack): Configured for 10.99.0.x/24
+- VM 301 (metasploitable2): Configured for 10.99.0.x/24
+- VM 302 (DVWA): Configured for 10.99.0.x/24
+- VM 400 (malware-win11): Configured for 10.98.0.x/24
 
 **Legacy Configuration Present:**
-- pve-gateway had vmbr2 bridge (10.99.0.1/24) - OLD pfSense gateway for security lab 1
-- pve-gateway had vmbr3 bridge (10.98.0.1/24) - OLD pfSense gateway for security lab 2
+- pve-gateway had vmbr2 bridge (10.99.0.x/24) - OLD pfSense gateway for security lab 1
+- pve-gateway had vmbr3 bridge (10.98.0.x/24) - OLD pfSense gateway for security lab 2
 - These bridges were remnants from deleted pfSense VM (VM 100)
 - These IPs should have been moved to OPNSense VLANs
 
@@ -101,7 +101,7 @@ Switch (pass VLAN tags transparently)
     ↓ 
 OPNSense LAN interface (re0)
     ↓
-OPNSense VLAN interfaces (10.99.0.1 and 10.98.0.1)
+OPNSense VLAN interfaces (10.99.0.x and 10.98.0.x)
 ```
 
 **Why No IP Changes Needed:**
@@ -147,7 +147,7 @@ Configuration:
 - Enabled: Yes
 - Description: VLAN40_SecurityLab1
 - IPv4 Type: Static
-- IPv4 Address: 10.99.0.1/24
+- IPv4 Address: 10.99.0.x/24
 
 **Result:** Interface configured and showing as UP in Interfaces → Overview
 
@@ -161,7 +161,7 @@ Configuration:
 - Enabled: Yes
 - Description: VLAN41_SecurityLab2
 - IPv4 Type: Static
-- IPv4 Address: 10.98.0.1/24
+- IPv4 Address: 10.98.0.x/24
 
 **Result:** Interface configured and showing as UP in Interfaces → Overview
 
@@ -199,7 +199,7 @@ Added rule:
 
 **Phase 1 Status: COMPLETE ✓**
 - OPNSense VLANs created and configured
-- Gateway IPs: 10.99.0.1 (VLAN 40), 10.98.0.1 (VLAN 41)
+- Gateway IPs: 10.99.0.x (VLAN 40), 10.98.0.x (VLAN 41)
 - Firewall rules in place
 - Interfaces showing UP in overview
 
@@ -215,7 +215,7 @@ Goal: Configure pve-gateway's vmbr0 bridge to pass VLAN-tagged traffic.
 
 SSH to pve-gateway:
 ```bash
-ssh admin@10.0.0.10
+ssh admin@10.0.0.x
 sudo nano /etc/network/interfaces
 ```
 
@@ -241,7 +241,7 @@ sudo reboot
 ```
 
 **Result after reboot:**
-- pve-gateway came back online at 10.0.0.10
+- pve-gateway came back online at 10.0.0.x
 - SSH access restored
 - However, cluster lost quorum temporarily
 
@@ -255,7 +255,7 @@ Quorate: No
 Nodes: 1
 ```
 
-**Root Cause:** Corosync configuration on pve-gateway reverted to showing old IP (192.168.100.2) instead of 10.0.0.10.
+**Root Cause:** Corosync configuration on pve-gateway reverted to showing old IP (192.168.100.x) instead of 10.0.0.x.
 
 **This was the SAME issue we fixed yesterday during the network migration.**
 
@@ -263,7 +263,7 @@ Nodes: 1
 
 On all nodes, edited /etc/corosync/corosync.conf and updated pve-gateway's ring0_addr:
 ```
-ring0_addr: 192.168.100.2  →  ring0_addr: 10.0.0.10
+ring0_addr: 192.168.100.x  →  ring0_addr: 10.0.0.x
 ```
 
 Restarted corosync on all nodes:
@@ -309,7 +309,7 @@ unable to open file '/etc/pve/nodes/pve-gateway/qemu-server/300.conf.tmp.1098' -
 **Attempted Solution 2:** Use command line to set VLAN tags.
 
 ```bash
-ssh admin@10.0.0.10
+ssh admin@10.0.0.x
 sudo qm set 300 --net0 virtio,bridge=vmbr0,tag=40
 ```
 
@@ -348,7 +348,7 @@ For each VM, edited network device:
 **Verification:**
 ```bash
 sudo qm config 300 | grep net0
-# Output: net0: virtio=<mac-redacted>,bridge=vmbr0,firewall=1,tag=40
+# Output: net0: virtio=xx:xx:xx:xx:xx:xx,bridge=vmbr0,firewall=1,tag=40
 ```
 
 **Initially showed firewall=1. Went back and unchecked firewall on all VMs.**
@@ -399,13 +399,13 @@ Opened console for VM 300 (Kali-attack).
 ```bash
 # Check IP configuration
 ip addr show eth0
-# Result: 10.99.0.10/24 ✓ (correct)
+# Result: 10.99.0.x/24 ✓ (correct)
 
 ip route show
-# Result: default via 10.99.0.1 dev eth0 ✓ (correct)
+# Result: default via 10.99.0.x dev eth0 ✓ (correct)
 
 # Test gateway
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 # Result: Destination Host Unreachable ✗ (FAILED)
 
 # Test internet
@@ -428,19 +428,19 @@ sudo tcpdump -i vmbr0 -e -n vlan 40
 
 **From Kali console (separate window):**
 ```bash
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 ```
 
 **tcpdump output:**
 ```
-14:46:52.442067 <mac-redacted> > <mac-redacted>, ethertype 802.1Q (0x8100), length 46: vlan 40, p 0, ethertype ARP (0x0806), Request who-has 10.99.0.1 tell 10.99.0.10, length 28
+14:46:52.442067 xx:xx:xx:xx:xx:xx > xx:xx:xx:xx:xx:xx, ethertype 802.1Q (0x8100), length 46: vlan 40, p 0, ethertype ARP (0x0806), Request who-has 10.99.0.x tell 10.99.0.x, length 28
 [repeated ARP requests, no replies]
 ```
 
 **Analysis:**
 - VLAN tags ARE being applied correctly (every packet shows "vlan 40") ✓
-- VMs ARE sending ARP requests for gateway 10.99.0.1 ✓
-- ARP requests asking "who-has 10.99.0.1" ✓
+- VMs ARE sending ARP requests for gateway 10.99.0.x ✓
+- ARP requests asking "who-has 10.99.0.x" ✓
 - NO ARP replies visible ✗ (PROBLEM)
 
 **Conclusion:** VLAN-tagged traffic is being generated correctly by VM and processed by Proxmox bridge, but something is preventing it from reaching OPNSense or preventing OPNSense from responding.
@@ -453,13 +453,13 @@ Goal: Determine if OPNSense VLAN gateway is reachable at all.
 
 **From pve-gateway SSH:**
 ```bash
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 # Result: Success - 0% packet loss ✓
 ```
 
 **This was CRITICAL information:**
-- Proxmox HOST can reach 10.99.0.1
-- VMs on Proxmox HOST cannot reach 10.99.0.1
+- Proxmox HOST can reach 10.99.0.x
+- VMs on Proxmox HOST cannot reach 10.99.0.x
 - This indicates the problem is specific to VM traffic, not overall connectivity
 
 ---
@@ -472,17 +472,17 @@ Goal: Determine if OPNSense is receiving the VLAN-tagged packets.
 
 Interfaces → Diagnostics → ARP Table
 
-Searched for: 10.99.0.10 (Kali VM)
+Searched for: 10.99.0.x (Kali VM)
 
 **Result:** Not found ✗
 
-**This means OPNSense has never seen a packet from 10.99.0.10.**
+**This means OPNSense has never seen a packet from 10.99.0.x.**
 
 ---
 
 Interfaces → Diagnostics → Ping
 
-Attempted to ping: 10.99.0.10
+Attempted to ping: 10.99.0.x
 
 **Result:** Timeout ✗
 
@@ -508,8 +508,8 @@ Started capture, then pinged from Kali VM.
 
 **What we know at this point:**
 
-1. Proxmox host (pve-gateway) CAN ping 10.99.0.1 ✓
-2. VMs on pve-gateway CANNOT ping 10.99.0.1 ✗
+1. Proxmox host (pve-gateway) CAN ping 10.99.0.x ✓
+2. VMs on pve-gateway CANNOT ping 10.99.0.x ✗
 3. VM traffic has correct VLAN tags (verified with tcpdump) ✓
 4. OPNSense LAN interface receives NO VLAN traffic ✗
 
@@ -536,34 +536,34 @@ ip addr show | grep vmbr
 **Output:**
 ```
 vmbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 10.0.0.10/24 brd 10.0.0.255 scope global vmbr0
+    inet 10.0.0.x/24 brd 10.0.0.x scope global vmbr0
 
 vmbr1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
     (internal VM network - not relevant)
 
 vmbr2: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 10.99.0.1/24 brd 10.99.0.255 scope global vmbr2
+    inet 10.99.0.x/24 brd 10.99.0.x scope global vmbr2
 
 vmbr3: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500
-    inet 10.98.0.1/24 brd 10.98.0.255 scope global vmbr3
+    inet 10.98.0.x/24 brd 10.98.0.x scope global vmbr3
 ```
 
 **THERE IT WAS:**
 
-vmbr2 and vmbr3 still existed on pve-gateway with the EXACT IP addresses (10.99.0.1 and 10.98.0.1) that should be on OPNSense's VLAN interfaces.
+vmbr2 and vmbr3 still existed on pve-gateway with the EXACT IP addresses (10.99.0.x and 10.98.0.x) that should be on OPNSense's VLAN interfaces.
 
 **What was happening:**
 
-1. Kali VM sends VLAN-tagged packet destined for 10.99.0.1
+1. Kali VM sends VLAN-tagged packet destined for 10.99.0.x
 2. Packet arrives at vmbr0 bridge on pve-gateway host
-3. pve-gateway host's routing table sees 10.99.0.1 is assigned to LOCAL interface vmbr2
+3. pve-gateway host's routing table sees 10.99.0.x is assigned to LOCAL interface vmbr2
 4. pve-gateway host responds to ARP request ITSELF
 5. Traffic never leaves pve-gateway host
 6. OPNSense never sees the traffic
 
 **When we tested from pve-gateway host:**
 ```bash
-ping 10.99.0.1
+ping 10.99.0.x
 ```
 
 The host was pinging ITSELF (its own vmbr2 interface), not OPNSense. That's why it worked.
@@ -571,7 +571,7 @@ The host was pinging ITSELF (its own vmbr2 interface), not OPNSense. That's why 
 **This explained everything:**
 - Why tcpdump on vmbr0 showed ARP requests but no replies (host was responding via vmbr2, not vmbr0)
 - Why OPNSense never saw any traffic (traffic never reached the physical network)
-- Why VMs couldn't reach the gateway (host was intercepting all traffic to 10.99.0.1 and 10.98.0.1)
+- Why VMs couldn't reach the gateway (host was intercepting all traffic to 10.99.0.x and 10.98.0.x)
 
 ---
 
@@ -579,7 +579,7 @@ The host was pinging ITSELF (its own vmbr2 interface), not OPNSense. That's why 
 
 **Step 5.1: Decision to Remove Legacy Bridges**
 
-**The problem was clear:** vmbr2 and vmbr3 were legacy remnants from the deleted pfSense VM. They needed to be removed so that 10.99.0.1 and 10.98.0.1 would route to OPNSense VLANs instead of staying local to pve-gateway.
+**The problem was clear:** vmbr2 and vmbr3 were legacy remnants from the deleted pfSense VM. They needed to be removed so that 10.99.0.x and 10.98.0.x would route to OPNSense VLANs instead of staying local to pve-gateway.
 
 **My instructions:**
 ```bash
@@ -631,8 +631,8 @@ iface nic0 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-    address 10.0.0.10/24
-    gateway 10.0.0.1
+    address 10.0.0.x/24
+    gateway 10.0.0.x
     bridge-ports nic0
     bridge-stp off
     bridge-fd 0
@@ -703,20 +703,20 @@ sudo reboot
 
 **Attempted SSH:**
 ```bash
-ssh admin@10.0.0.10
+ssh admin@10.0.0.x
 ```
 
 **Result:**
 ```
 System is going down. Unprivileged users are not permitted to log in anymore.
-Connection closed by 10.0.0.10 port 22
+Connection closed by 10.0.0.x port 22
 ```
 
 **Repeated attempts all failed with "Connection closed."**
 
-**Attempted WebUI access:** https://10.0.0.10:8006
+**Attempted WebUI access:** https://10.0.0.x:8006
 
-**Result:** "This site can't be reached - 10.0.0.10 refused to connect - ERR_CONNECTION_REFUSED"
+**Result:** "This site can't be reached - 10.0.0.x refused to connect - ERR_CONNECTION_REFUSED"
 
 **Attempted Proxmox cluster console:**
 
@@ -738,9 +738,9 @@ Accessed pve-services WebUI, then Datacenter → pve-gateway → Shell
 - Physical console: NOT ACCESSIBLE (no keyboard/monitor connected)
 
 **Remaining Cluster Status:**
-- pve-services: ONLINE (10.0.0.11)
-- pve-env1: ONLINE (10.0.0.12)
-- pve-env2: ONLINE (10.0.0.13)
+- pve-services: ONLINE (10.0.0.x)
+- pve-env1: ONLINE (10.0.0.x)
+- pve-env2: ONLINE (10.0.0.x)
 - Cluster quorum: YES (3 of 4 nodes - still has majority)
 
 **VMs on pve-gateway:**
@@ -816,8 +816,8 @@ There was no documented rollback procedure if the reboot failed. Once the system
 **Context:** Deleted pfSense VM (VM 100) during network migration  
 **What should have happened:**
 - Delete pfSense VM
-- Remove vmbr2 bridge (10.99.0.1/24) from pve-gateway
-- Remove vmbr3 bridge (10.98.0.1/24) from pve-gateway
+- Remove vmbr2 bridge (10.99.0.x/24) from pve-gateway
+- Remove vmbr3 bridge (10.98.0.x/24) from pve-gateway
 - Verify no bridge configurations remain
 
 **What actually happened:**
@@ -835,7 +835,7 @@ There was no documented rollback procedure if the reboot failed. Once the system
 **Context:** About to implement VLANs for security labs  
 **What should have happened:**
 - Check current bridge configuration on pve-gateway
-- Identify that vmbr2 and vmbr3 existed with 10.99.0.1 and 10.98.0.1
+- Identify that vmbr2 and vmbr3 existed with 10.99.0.x and 10.98.0.x
 - Recognize these IPs conflict with planned OPNSense VLAN gateways
 - Clean up BEFORE starting VLAN configuration
 
@@ -1037,8 +1037,8 @@ Changing a node's network configuration can temporarily break cluster communicat
 If a Linux bridge has the same IP as a destination you're trying to reach, the host will respond locally instead of forwarding traffic.
 
 **Example of conflict:**
-- vmbr2 on host: 10.99.0.1/24
-- VM wants to reach: 10.99.0.1 (expecting OPNSense)
+- vmbr2 on host: 10.99.0.x/24
+- VM wants to reach: 10.99.0.x (expecting OPNSense)
 - Host intercepts: Traffic goes to local vmbr2, never leaves host
 
 **Always check for IP conflicts between host interfaces and gateway destinations.**
@@ -1198,8 +1198,8 @@ cat /etc/network/interfaces
 # Should look like:
 # auto vmbr0
 # iface vmbr0 inet static
-#     address 10.0.0.10/24
-#     gateway 10.0.0.1
+#     address 10.0.0.x/24
+#     gateway 10.0.0.x
 #     bridge-ports nic0
 #     bridge-stp off
 #     bridge-fd 0
@@ -1220,17 +1220,17 @@ ip addr show vmbr0
 
 # Should show:
 # vmbr0: <BROADCAST,MULTICAST,UP,LOWER_UP>
-#     inet 10.0.0.10/24 ...
+#     inet 10.0.0.x/24 ...
 ```
 
 **8. Test Network Connectivity**
 
 ```bash
 # Test gateway
-ping -c 3 10.0.0.1
+ping -c 3 10.0.0.x
 
 # Test another node
-ping -c 3 10.0.0.12
+ping -c 3 10.0.0.x
 
 # Test internet
 ping -c 3 8.8.8.8
@@ -1272,11 +1272,11 @@ journalctl -u networking -n 50
 # Try manual interface bring-up
 ip link set nic0 up
 ip link set vmbr0 up
-ip addr add 10.0.0.10/24 dev vmbr0
-ip route add default via 10.0.0.1
+ip addr add 10.0.0.x/24 dev vmbr0
+ip route add default via 10.0.0.x
 
 # Test connectivity
-ping 10.0.0.1
+ping 10.0.0.x
 ```
 
 **12. Last Resort: Revert to Known Good Config**
@@ -1296,8 +1296,8 @@ iface nic0 inet manual
 
 auto vmbr0
 iface vmbr0 inet static
-    address 10.0.0.10/24
-    gateway 10.0.0.1
+    address 10.0.0.x/24
+    gateway 10.0.0.x
     bridge-ports nic0
     bridge-stp off
     bridge-fd 0
@@ -1312,7 +1312,7 @@ systemctl restart networking
 
 # Verify
 ip addr show vmbr0
-ping 10.0.0.1
+ping 10.0.0.x
 ```
 
 ---
@@ -1326,7 +1326,7 @@ ping 10.0.0.1
 pvecm status  # Should show quorate with 4 nodes
 
 # On another node
-ssh admin@10.0.0.12
+ssh admin@10.0.0.x
 pvecm status  # Should see pve-gateway back online
 ```
 
@@ -1392,8 +1392,8 @@ cat /sys/class/net/vmbr0/bridge/vlan_filtering
 **2. Verify OPNSense VLAN Status**
 
 OPNSense VLANs should still be configured from earlier:
-- VLAN 40: 10.99.0.1/24
-- VLAN 41: 10.98.0.1/24
+- VLAN 40: 10.99.0.x/24
+- VLAN 41: 10.98.0.x/24
 
 Check Interfaces → Overview to confirm.
 
@@ -1411,8 +1411,8 @@ qm config 400 | grep net0  # Should show tag=41
 
 **Test 1: Proxmox host to OPNSense VLAN gateway**
 ```bash
-ping -c 3 10.99.0.1
-ping -c 3 10.98.0.1
+ping -c 3 10.99.0.x
+ping -c 3 10.98.0.x
 ```
 
 Should SUCCEED (no bridge conflict now).
@@ -1426,7 +1426,7 @@ Wait 30 seconds for boot.
 
 ```bash
 # From VM console
-ping -c 3 10.99.0.1  # Gateway
+ping -c 3 10.99.0.x  # Gateway
 ping -c 3 8.8.8.8    # Internet
 ping -c 3 google.com # DNS
 ```
@@ -1437,7 +1437,7 @@ If all succeed, VLAN implementation is working.
 
 In OPNSense:
 - Interfaces → Diagnostics → ARP Table
-- Look for 10.99.0.10
+- Look for 10.99.0.x
 
 Should be present now.
 
@@ -1450,8 +1450,8 @@ qm start 400
 
 From VM console:
 ```cmd
-ping 10.98.0.1   # Gateway - should work
-ping 10.0.0.10   # Management - should work
+ping 10.98.0.x   # Gateway - should work
+ping 10.0.0.x   # Management - should work
 ping 8.8.8.8     # Internet - should FAIL (isolated)
 ```
 
@@ -1558,8 +1558,8 @@ For any future network configuration changes on Proxmox:
 
 4. **Test Connectivity**
    ```bash
-   ping 10.0.0.1      # Gateway
-   ping 10.0.0.12     # Another node
+   ping 10.0.0.x      # Gateway
+   ping 10.0.0.x     # Another node
    ping 8.8.8.8       # Internet
    ```
 
@@ -1601,7 +1601,7 @@ For any future network configuration changes on Proxmox:
 
 3. **Test SSH from External Host**
    ```bash
-   ssh admin@10.0.0.10
+   ssh admin@10.0.0.x
    ```
 
 4. **Test VM Connectivity**
@@ -1884,8 +1884,8 @@ cat > /usr/local/bin/test-network.sh << 'EOF'
 echo "Testing network connectivity..."
 
 # Test gateway
-echo -n "Gateway (10.0.0.1): "
-if ping -c 1 -W 2 10.0.0.1 &>/dev/null; then
+echo -n "Gateway (10.0.0.x): "
+if ping -c 1 -W 2 10.0.0.x &>/dev/null; then
     echo "OK"
 else
     echo "FAIL"
@@ -1893,8 +1893,8 @@ else
 fi
 
 # Test another node
-echo -n "Peer node (10.0.0.12): "
-if ping -c 1 -W 2 10.0.0.12 &>/dev/null; then
+echo -n "Peer node (10.0.0.x): "
+if ping -c 1 -W 2 10.0.0.x &>/dev/null; then
     echo "OK"
 else
     echo "FAIL"

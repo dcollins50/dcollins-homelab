@@ -6,7 +6,7 @@ status: complete
 
 # SOP: Harden a Fresh Debian VPS
 
-**Status:** Complete procedure (first run Sep 28, 2026 on [[vps-redirector]])
+**Status:** Complete procedure (first run Sep 28, 2026 on [[racknerd-vps]])
 **Objective:** Take a bare, provider-default Debian VPS (root SSH, password auth, no firewall) to a baseline hardened state: a non-root sudo user, key-only SSH, root login and passwords off, a default-deny firewall, automatic security patches, and brute-force protection.
 
 ---
@@ -24,8 +24,8 @@ This is dependency-ordered work across several tools that must happen in the rig
 ### 1. Create a non-root sudo user
 
 ```bash
-adduser admin
-usermod -aG sudo admin
+adduser [admin-user]
+usermod -aG sudo [admin-user]
 ```
 
 ### 2. Set up key-only login for that user
@@ -33,12 +33,12 @@ usermod -aG sudo admin
 Generate a dedicated key for this box on your workstation (do not reuse a key that already protects other machines):
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/vps_key -C "vps-redirector"
+ssh-keygen -t ed25519 -f ~/.ssh/racknerd_vps -C "racknerd-vps"
 ```
 
-Install the public key for the new user. Either `ssh-copy-id -i ~/.ssh/vps_key.pub admin@<vps-ip>`, or paste the `.pub` contents into `/home/admin/.ssh/authorized_keys` (mode `600`, owned by `admin`, `.ssh` mode `700`).
+Install the public key for the new user. Either `ssh-copy-id -i ~/.ssh/racknerd_vps.pub [admin-user]@<vps-ip>`, or paste the `.pub` contents into `/home/[admin-user]/.ssh/authorized_keys` (mode `600`, owned by `[admin-user]`, `.ssh` mode `700`).
 
-**Checkpoint:** In a new terminal, `ssh -i ~/.ssh/vps_key admin@<vps-ip>` and confirm you land in a shell and `sudo -v` works. Do not proceed until this succeeds. This is the session you will keep open for the rest of the SOP.
+**Checkpoint:** In a new terminal, `ssh -i ~/.ssh/racknerd_vps [admin-user]@<vps-ip>` and confirm you land in a shell and `sudo -v` works. Do not proceed until this succeeds. This is the session you will keep open for the rest of the SOP.
 
 ### 3. Disable root login and password auth
 
@@ -51,10 +51,10 @@ PermitRootLogin no
 PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
-AllowUsers admin
+AllowUsers [admin-user]
 ```
 
-**Provider drop-in gotcha (this is what bit the provider):** the provider ships `/etc/ssh/sshd_config.d/99-ctrl.conf` forcing `PermitRootLogin yes` and `PasswordAuthentication yes`. Because `00-hardening.conf` sorts first, it already wins on a fresh box, but remove the conflicting file anyway so the box has one source of truth. Also comment any uncommented `yes` lines in the main `sshd_config`. Check what is in play first:
+**Provider drop-in gotcha (this is what bit RackNerd):** RackNerd ships `/etc/ssh/sshd_config.d/99-ctrl.conf` forcing `PermitRootLogin yes` and `PasswordAuthentication yes`. Because `00-hardening.conf` sorts first, it already wins on a fresh box, but remove the conflicting file anyway so the box has one source of truth. Also comment any uncommented `yes` lines in the main `sshd_config`. Check what is in play first:
 
 ```bash
 sudo grep -riE 'PermitRootLogin|PasswordAuthentication' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/
@@ -69,9 +69,9 @@ sudo sshd -t && sudo systemctl reload ssh
 sudo sshd -T | grep -Ei 'permitrootlogin|passwordauthentication|allowusers'
 ```
 
-The `sshd -T` output is the real proof, not login behavior. It must read `permitrootlogin no`, `passwordauthentication no`, `allowusers admin`.
+The `sshd -T` output is the real proof, not login behavior. It must read `permitrootlogin no`, `passwordauthentication no`, `allowusers [admin-user]`.
 
-**Checkpoint:** From a new terminal, confirm `ssh root@<vps-ip>` is refused and password login is refused (`ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no admin@<vps-ip>` should fail). Your key session from step 2 must still be open and working. Only once both refusals are confirmed do you continue.
+**Checkpoint:** From a new terminal, confirm `ssh root@<vps-ip>` is refused and password login is refused (`ssh -o PreferredAuthentications=password -o PubkeyAuthentication=no [admin-user]@<vps-ip>` should fail). Your key session from step 2 must still be open and working. Only once both refusals are confirmed do you continue.
 
 ### 4. Default-deny firewall with nftables
 
@@ -148,12 +148,12 @@ Every step above is bundled into an idempotent script at `Scripts/bash/harden-de
 sudo bash harden-debian-vps.sh
 ```
 
-It is safe to re-run: anything already correct is left alone. The lockout-proof way to run it is from the provider web console (the provider noVNC/serial) as root, so there is no SSH session to lose when password auth is turned off. The script refuses to lock down SSH unless the admin key is actually in place. The manual steps here remain the reference for what the script does and for doing it by hand when you want to understand a step.
+It is safe to re-run: anything already correct is left alone. The lockout-proof way to run it is from the provider web console (RackNerd noVNC/serial) as root, so there is no SSH session to lose when password auth is turned off. The script refuses to lock down SSH unless the admin key is actually in place. The manual steps here remain the reference for what the script does and for doing it by hand when you want to understand a step.
 
 ## What this SOP does not cover
 
-This is host-level baseline hardening only. It does not cover the transport tunnel back to the homelab, the OPNSense-side firewall scoping, or any service the box runs. For the the provider redirector specifically, those live with [[vps-redirector]] and, once built, the WireGuard tunnel note.
+This is host-level baseline hardening only. It does not cover the transport tunnel back to the homelab, the OPNSense-side firewall scoping, or any service the box runs. For the RackNerd redirector specifically, those live with [[racknerd-vps]] and, once built, the WireGuard tunnel note.
 
 ## Related
-- [[vps-redirector]]
+- [[racknerd-vps]]
 - [[Security-Lab]]

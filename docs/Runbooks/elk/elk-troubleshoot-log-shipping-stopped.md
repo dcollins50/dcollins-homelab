@@ -60,10 +60,10 @@ Check for:
 
 ### 4. Is the traffic actually reaching Logstash at all?
 
-<!-- redacted: operational security detail redacted for public repo -->
+This is the step that's easy to skip if you're focused on Logstash/Elasticsearch internals, but **this has been the actual root cause here before** (the Jetson Filebeat outage): a firewall rule silently blocking the source VLAN's traffic to the SOC ingest port, with logging disabled on the blocking rule so it produced no visible trace.
 
 1. Confirm the firewall rule exists and is actually permitting this specific source's traffic to the ingest port, don't just assume it does because it did once, check the live ruleset. See [[opnsense-add-firewall-rule|Add a Firewall Rule]].
-<!-- redacted: operational security detail redacted for public repo -->
+2. If a block rule with logging disabled is a possibility, consider temporarily enabling logging on the relevant block rule to confirm/deny this is the cause, rather than guessing.
 3. Test connectivity directly from the source host:
    ```bash
    nc -zv <soc-stack-ip> <ingest-port>
@@ -82,7 +82,7 @@ journalctl -u filebeat -n 50
 ## Common mistakes
 
 - **Jumping straight to "check Logstash" without first ruling out a cluster-wide capacity issue**, wastes time on a single-pipeline theory when the real cause affects everything.
-<!-- redacted: operational security detail redacted for public repo -->
+- **Assuming the firewall is fine because it "was fine before."** A rule can silently stop matching after other rule changes, or have logging disabled specifically on the rule that matters, don't skip step 4 just because it seems unlikely.
 - **Not checking disk space early.** It's a fast check and rules out an entire category of failure immediately.
 
 ---

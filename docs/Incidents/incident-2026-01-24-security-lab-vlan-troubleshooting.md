@@ -25,20 +25,20 @@ Security lab VMs (Kali, metasploitable2, DVWA on VLAN 40; malware-win11 on VLAN 
 ## Initial Symptoms
 
 1. **Complete connectivity failure:**
-   - Cannot ping security lab VMs from workstation (10.0.0.199)
-   - Cannot ping security lab VMs from OPNSense (10.0.0.1)
+   - Cannot ping security lab VMs from workstation (10.0.0.x)
+   - Cannot ping security lab VMs from OPNSense (10.0.0.x)
    - Cannot ping security lab VMs from any Proxmox host
    - VMs are running and appear healthy in Proxmox interface
 
 2. **Contrast with working systems:**
    - Other VLANs (20, 30) work perfectly
-   - Can ping services-host on pve-services @ 10.0.20.30
-   - Can ping VM 700 on pve-SOC @ 10.0.20.31
+   - Can ping services-host on pve-services @ 10.0.20.x
+   - Can ping VM 700 on pve-SOC @ 10.0.20.x
    - Can ping all Proxmox hosts from all locations
-   - **Can ping OPNSense VLAN 40 gateway (10.99.0.1) from workstation**
+   - **Can ping OPNSense VLAN 40 gateway (10.99.0.x) from workstation**
 
 3. **Expected vs actual:**
-   - VMs should respond at 10.99.0.10 (Kali), 10.99.0.20 (metasploitable2), 10.99.0.30 (DVWA), 10.98.0.10 (malware VM)
+   - VMs should respond at 10.99.0.x (Kali), 10.99.0.x (metasploitable2), 10.99.0.x (DVWA), 10.98.0.x (malware VM)
    - All pings time out with 100% packet loss
 
 ---
@@ -46,12 +46,12 @@ Security lab VMs (Kali, metasploitable2, DVWA on VLAN 40; malware-win11 on VLAN 
 ## Network Topology Context
 
 ```
-Workstation (10.0.0.199)
+Workstation (10.0.0.x)
     ↓
-OPNSense LAN (10.0.0.1) --- VLAN 1 (Management)
+OPNSense LAN (10.0.0.x) --- VLAN 1 (Management)
     |
-    +--- VLAN 40 interface (10.99.0.1) --- Security Lab 1
-    +--- VLAN 41 interface (10.98.0.1) --- Security Lab 2
+    +--- VLAN 40 interface (10.99.0.x) --- Security Lab 1
+    +--- VLAN 41 interface (10.98.0.x) --- Security Lab 2
     ↓
 TP-Link Managed Switch (Port 5)
     ↓
@@ -64,7 +64,7 @@ VM tap interfaces (tag=40, tag=41)
 Security Lab VMs
 ```
 
-**Key insight that should have been obvious:** Workstation could reach OPNSense's VLAN 40 gateway (10.99.0.1) but not VMs (10.99.0.x). This meant OPNSense VLAN interfaces were working, but traffic wasn't reaching the VMs.
+**Key insight that should have been obvious:** Workstation could reach OPNSense's VLAN 40 gateway (10.99.0.x) but not VMs (10.99.0.x). This meant OPNSense VLAN interfaces were working, but traffic wasn't reaching the VMs.
 
 ---
 
@@ -96,8 +96,8 @@ cat /etc/network/interfaces
 ```
 auto vmbr0
 iface vmbr0 inet static
-    address 10.0.0.10/24
-    gateway 10.0.0.1
+    address 10.0.0.x/24
+    gateway 10.0.0.x
     bridge-ports nic0
     bridge-stp off
     bridge-fd 0
@@ -112,14 +112,14 @@ iface vmbr0 inet static
 - VLAN 41: Parent re0, Tag 41, Description "VLAN41_SecurityLab2" ✓
 
 **Interfaces → Assignments:**
-- OPT1 assigned to re0_vlan40 with IP 10.99.0.1/24, Status: UP ✓
-- OPT2 assigned to re0_vlan41 with IP 10.98.0.1/24, Status: UP ✓
+- OPT1 assigned to re0_vlan40 with IP 10.99.0.x/24, Status: UP ✓
+- OPT2 assigned to re0_vlan41 with IP 10.98.0.x/24, Status: UP ✓
 
 **OPNSense Shell:**
 ```bash
 ifconfig | grep -A 5 vlan
-ping -c 3 10.99.0.1  # Success
-ping -c 3 10.98.0.1  # Success
+ping -c 3 10.99.0.x  # Success
+ping -c 3 10.98.0.x  # Success
 ```
 
 **Result:** OPNSense can reach its own VLAN gateways ✓
@@ -146,7 +146,7 @@ ping -c 3 10.98.0.1  # Success
 #### 2.1 VM-to-VM Communication Test
 **From Kali console (VM 300):**
 ```bash
-ping -c 3 10.99.0.30  # DVWA
+ping -c 3 10.99.0.x  # DVWA
 ```
 
 **Result:** Success ✓ - VMs on same VLAN/host can communicate
@@ -170,10 +170,10 @@ ping -c 3 10.99.0.30  # DVWA
 sudo tcpdump -i nic0 -nn vlan 40
 ```
 
-**While OPNSense pings 10.99.0.10:**
+**While OPNSense pings 10.99.0.x:**
 ```
-12:28:34.601434 ARP, Request who-has 10.99.0.10 tell 10.99.0.1, length 42
-12:28:35.636345 ARP, Request who-has 10.99.0.10 tell 10.99.0.1, length 42
+12:28:34.601434 ARP, Request who-has 10.99.0.x tell 10.99.0.x, length 42
+12:28:35.636345 ARP, Request who-has 10.99.0.x tell 10.99.0.x, length 42
 ```
 
 **Result:** ARP requests FROM OPNSense ARE arriving at pve-gateway's nic0 ✓
@@ -193,30 +193,30 @@ sudo tcpdump -i vmbr0 -nn vlan 40
 sudo tcpdump -i eth0 -nn
 ```
 
-**Result:** Kali IS receiving ARP requests from 10.99.0.1 ✓
+**Result:** Kali IS receiving ARP requests from 10.99.0.x ✓
 
 **Significance:** Complete inbound path working - OPNSense → Switch → nic0 → vmbr0 → VM
 
 #### 3.4 Outbound Traffic from VM - Bridge Level
 ```bash
 # On pve-gateway
-sudo tcpdump -i vmbr0 -nn src 10.99.0.10
+sudo tcpdump -i vmbr0 -nn src 10.99.0.x
 ```
 
 **While Kali runs arping:**
 ```bash
 # In Kali
-sudo arping -I eth0 10.99.0.1
+sudo arping -I eth0 10.99.0.x
 ```
 
-**Result:** vmbr0 shows ARP requests FROM Kali asking for 10.99.0.1 ✓
+**Result:** vmbr0 shows ARP requests FROM Kali asking for 10.99.0.x ✓
 
 **Significance:** VM can send, bridge receives VM's packets
 
 #### 3.5 Outbound Traffic - Physical Interface (CRITICAL TEST)
 ```bash
 # On pve-gateway
-sudo tcpdump -i nic0 -nn -e vlan 40 and src 10.99.0.10
+sudo tcpdump -i nic0 -nn -e vlan 40 and src 10.99.0.x
 ```
 
 **While Kali runs arping:**
@@ -298,15 +298,15 @@ nic0              1 PVID Egress Untagged
 **Testing:**
 ```bash
 # From Kali
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 # Success!
 
 # From workstation
-ping 10.99.0.10
+ping 10.99.0.x
 # Success!
 
 # From OPNSense
-ping -c 3 10.99.0.10
+ping -c 3 10.99.0.x
 # Success!
 ```
 
@@ -319,8 +319,8 @@ sudo nano /etc/network/interfaces
 ```
 auto vmbr0
 iface vmbr0 inet static
-    address 10.0.0.10/24
-    gateway 10.0.0.1
+    address 10.0.0.x/24
+    gateway 10.0.0.x
     bridge-ports nic0
     bridge-stp off
     bridge-fd 0

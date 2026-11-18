@@ -8,12 +8,12 @@ status: resolved
 # Incident: pve-env1 Failed to Rejoin Quorum After Reboot (Stale corosync.conf IPs)
 
 **Date:** 2026-02-23
-**Systems affected:** pve-env1 (10.0.0.12), Proxmox cluster "homelab"
+**Systems affected:** pve-env1 (10.0.0.x), Proxmox cluster "homelab"
 **Status:** Resolved
 
 ## Summary
 
-After a clean reboot with no changes beforehand, pve-env1 came back up but showed offline in the cluster. It was reachable by ping and SSH. Corosync was binding to 192.168.100.7, an address from before the management subnet migration to 10.0.0.0/24. The cluster-wide corosync config still listed all four nodes on their old 192.168.100.x addresses. Updating the master config and copying it to the isolated node restored quorum.
+After a clean reboot with no changes beforehand, pve-env1 came back up but showed offline in the cluster. It was reachable by ping and SSH. Corosync was binding to 192.168.100.x, an address from before the management subnet migration to 10.0.0.0/24. The cluster-wide corosync config still listed all four nodes on their old 192.168.100.x addresses. Updating the master config and copying it to the isolated node restored quorum.
 
 ## Timeline
 
@@ -21,10 +21,10 @@ Times are from the node's clock, which was set to Hawaii time (HST) instead of C
 
 - **16:13** Previous boot ends (reboot of pve-env1).
 - **16:17** pve-env1 back up. pmxcfs logs `cpg_initialize failed: CS_ERR_LIBRARY`. Corosync starts but forms a one-member ring.
-- **16:24** `corosync-cfgtool -s` shows `addr = 192.168.100.7` with nodes 1, 2 and 3 disconnected. `pvecm status` shows `Quorate: No`, 1 of 4 votes, config version 6.
+- **16:24** `corosync-cfgtool -s` shows `addr = 192.168.100.x` with nodes 1, 2 and 3 disconnected. `pvecm status` shows `Quorate: No`, 1 of 4 votes, config version 6.
 - **~16:30** `/etc/pve/corosync.conf` reviewed on pve-services. All four `ring0_addr` values were old 192.168.100.x addresses.
 - **~16:33** Master config edited on pve-services. All four IPs corrected, `config_version` bumped from 6 to 7.
-- **16:35** Corosync restarted on pve-env1. Still on version 6, still bound to 192.168.100.7. The update could not sync to a node with no quorum.
+- **16:35** Corosync restarted on pve-env1. Still on version 6, still bound to 192.168.100.x. The update could not sync to a node with no quorum.
 - **16:36** Config copied to pve-env1 manually, corosync restarted. 4 of 4 nodes, `Quorate: Yes`, config version 7.
 
 ## Root Cause
@@ -33,10 +33,10 @@ After the Proxmox management network moved from 192.168.100.x to 10.0.0.x, the c
 
 | Node | Stale address | Correct address |
 |-|-|-|
-| pve-gateway | 192.168.100.2 | 10.0.0.10 |
-| pve-services | 192.168.100.3 | 10.0.0.11 |
-| pve-env2 | 192.168.100.4 | 10.0.0.13 |
-| pve-env1 | 192.168.100.7 | 10.0.0.12 |
+| pve-gateway | 192.168.100.x | 10.0.0.x |
+| pve-services | 192.168.100.x | 10.0.0.x |
+| pve-env2 | 192.168.100.x | 10.0.0.x |
+| pve-env1 | 192.168.100.x | 10.0.0.x |
 
 Earlier corrections had been made to the local copy at `/etc/corosync/corosync.conf`. That file is generated from `/etc/pve/corosync.conf` by pmxcfs, so those edits were overwritten on sync and the stale addresses came back. When pve-env1 restarted, corosync read the stale address and could not reach any other node.
 
@@ -46,10 +46,10 @@ On a quorate node (pve-services), edit the master copy and bump the version:
 
 ```bash
 sed -i \
-  -e 's/ring0_addr: 192.168.100.2/ring0_addr: 10.0.0.10/' \
-  -e 's/ring0_addr: 192.168.100.3/ring0_addr: 10.0.0.11/' \
-  -e 's/ring0_addr: 192.168.100.7/ring0_addr: 10.0.0.12/' \
-  -e 's/ring0_addr: 192.168.100.4/ring0_addr: 10.0.0.13/' \
+  -e 's/ring0_addr: 192.168.100.x/ring0_addr: 10.0.0.x/' \
+  -e 's/ring0_addr: 192.168.100.x/ring0_addr: 10.0.0.x/' \
+  -e 's/ring0_addr: 192.168.100.x/ring0_addr: 10.0.0.x/' \
+  -e 's/ring0_addr: 192.168.100.x/ring0_addr: 10.0.0.x/' \
   -e 's/config_version: 6/config_version: 7/' \
   /etc/pve/corosync.conf
 ```
@@ -57,7 +57,7 @@ sed -i \
 A node without quorum cannot receive the update through pmxcfs, so copy it to the isolated node's local file and restart corosync there:
 
 ```bash
-scp /etc/pve/corosync.conf root@10.0.0.12:/etc/corosync/corosync.conf
+scp /etc/pve/corosync.conf root@10.0.0.x:/etc/corosync/corosync.conf
 systemctl restart corosync
 pvecm status
 ```

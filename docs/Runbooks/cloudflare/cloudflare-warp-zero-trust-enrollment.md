@@ -9,7 +9,7 @@ tool: cloudflare
 **Category:** Cloudflare Tunnel / Zero Trust
 **When to use:** Setting up a headless Linux host to enroll as a managed device in a Cloudflare Zero Trust organization, authenticating through a third-party IdP (Authentik or similar) rather than a bare one-time PIN.
 
-**Status as of last use:** Setup steps below are confirmed correct and complete through device enrollment permissions. Final enrollment click was blocked by a browser-side `ERR_QUIC_PROTOCOL_ERROR` on the authorize redirect — see Known Issue at the bottom before assuming a fresh attempt will fail the same way you configured something wrong.
+**Status as of Oct 2, 2026:** Enrollment completes. The `ERR_QUIC_PROTOCOL_ERROR` was most likely an NPM 502 caused by large response headers, fixed per [[npm-fix-502-upstream-header-too-big]]. For a headless host, the browser click does not work, use the token hand-off in [[cloudflare-warp-mesh-node-headless]].
 
 ## Prerequisites
 
@@ -60,7 +60,9 @@ warp-cli registration organization
 | Identification step (email/username prompt) fails with "invalid identifier" in the IdP's own logs | Wrong value typed (e.g. a username fragment instead of the full email the account actually uses) | Confirm the exact identifier value the account is provisioned under |
 | Identification succeeds (confirmed via IdP server logs — no error at that stage) but the browser never shows a password/next-stage prompt | Client-side failure after a successful server response — check IdP flow stage bindings are intact, and rule out corrupted session cookies with a private/incognito window | If a private window changes nothing, the issue is likely below the application layer (see Known Issue) |
 
-## Known Issue (unresolved as of last session)
+## Known Issue (resolved Oct 2, 2026, kept for history)
+
+Resolution: NPM proxy buffers were too small, see [[npm-fix-502-upstream-header-too-big]]. The original investigation notes follow.
 
 `ERR_QUIC_PROTOCOL_ERROR` on the `/application/o/authorize/` redirect specifically, reproduced across multiple browsers and networks, with server-side logs showing no error at all for the corresponding request (meaning it may not be reaching the server in a form the server can log). The authorize URL carries a large base64-encoded `state` parameter (several KB) — QUIC/HTTP3 has stricter size limits than HTTP/1.1 or HTTP/2, and this is the leading unconfirmed theory. Next diagnostic step: test the exact failing URL with `curl` (which won't attempt QUIC) to confirm whether the request itself succeeds over HTTP/2, which would isolate this to protocol negotiation rather than anything in the Access/IdP/tunnel configuration.
 

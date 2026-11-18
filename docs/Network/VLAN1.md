@@ -11,8 +11,8 @@ Carries Proxmox node management traffic and OPNSense management access. Access r
 ## Hosts
 | Host | IP |
 |------|----|
-| [[opnsense]] (mgmt) | 10.0.0.1 |
-| [[pve-gateway]] | 10.0.0.10 |
-| [[pve-services]] | 10.0.0.11 |
-| [[pve-env1]] | 10.0.0.12 |
-| [[pve-env2]] | 10.0.0.13 |
+| [[opnsense]] (mgmt) | 10.0.0.x |
+| [[pve-gateway]] | 10.0.0.x |
+| [[pve-services]] | 10.0.0.x |
+| [[pve-env1]] | 10.0.0.x |
+| [[pve-env2]] | 10.0.0.x |

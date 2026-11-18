@@ -38,9 +38,9 @@ After recovery, VLAN implementation resumed. All configuration components were v
 - Physical console: AVAILABLE (user obtained access)
 
 **Remaining Cluster:**
-- pve-services: ONLINE (10.0.0.11)
-- pve-env1: ONLINE (10.0.0.12)
-- pve-SOC: ONLINE (10.0.0.13)
+- pve-services: ONLINE (10.0.0.x)
+- pve-env1: ONLINE (10.0.0.x)
+- pve-SOC: ONLINE (10.0.0.x)
 - Cluster quorum: YES (3 of 4 nodes)
 
 **Suspected Problem:**
@@ -121,7 +121,7 @@ systemctl restart networking
 ip addr show vmbr0
 ```
 
-**Expected:** vmbr0 interface with 10.0.0.10/24 IP address
+**Expected:** vmbr0 interface with 10.0.0.x/24 IP address
 
 **Actual:** (Confirmed network came back up and SSH access was restored)
 
@@ -133,7 +133,7 @@ ip addr show vmbr0
 
 **From workstation:**
 ```bash
-ssh admin@10.0.0.10
+ssh admin@10.0.0.x
 ```
 
 **Result:** SSH connection successful. Network fully restored.
@@ -141,11 +141,11 @@ ssh admin@10.0.0.10
 **Tests performed:**
 ```bash
 # Ping gateway
-ping -c 3 10.0.0.1
+ping -c 3 10.0.0.x
 # Result: Success
 
 # Ping another node
-ping -c 3 10.0.0.12
+ping -c 3 10.0.0.x
 # Result: Success
 ```
 
@@ -194,12 +194,12 @@ All nodes showing 10.0.0.x addresses
 **Problem Identified:** 
 ```
 pve-gateway's entry in corosync.conf showed:
-ring0_addr: 192.168.100.2
+ring0_addr: 192.168.100.x
 ```
 
 **Should have been:**
 ```
-ring0_addr: 10.0.0.10
+ring0_addr: 10.0.0.x
 ```
 
 **This is the SAME issue that occurred:**
@@ -207,7 +207,7 @@ ring0_addr: 10.0.0.10
 - Earlier today after first reboot during VLAN work
 - Now again after recovery reboot
 
-**Pattern Recognition:** Every time pve-gateway reboots, corosync.conf reverts to showing the old IP address (192.168.100.2) instead of the new IP address (10.0.0.10).
+**Pattern Recognition:** Every time pve-gateway reboots, corosync.conf reverts to showing the old IP address (192.168.100.x) instead of the new IP address (10.0.0.x).
 
 ---
 
@@ -332,17 +332,17 @@ ip addr show eth0
 
 **Expected:**
 - Interface: eth0
-- IP Address: 10.99.0.10/24
+- IP Address: 10.99.0.x/24
 - State: UP
 
-**Result:** Configuration showed correct IP address (10.99.0.10/24) and interface was UP.
+**Result:** Configuration showed correct IP address (10.99.0.x/24) and interface was UP.
 
 **Gateway Test:**
 ```bash
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 ```
 
-**Expected Result:** Replies from 10.99.0.1 (OPNSense VLAN 40 gateway)
+**Expected Result:** Replies from 10.99.0.x (OPNSense VLAN 40 gateway)
 
 **Actual Result:** Ping failed. No replies received.
 
@@ -370,8 +370,8 @@ ping -c 3 google.com
 
 **From pve-gateway SSH:**
 ```bash
-# Check for IP addresses 10.99.0.1 and 10.98.0.1
-ip addr show | grep -E "10.99.0.1|10.98.0.1"
+# Check for IP addresses 10.99.0.x and 10.98.0.x
+ip addr show | grep -E "10.99.0.x|10.98.0.x"
 ```
 
 **Expected Result:** No output (these IPs should only exist on OPNSense VLAN interfaces)
@@ -388,13 +388,13 @@ ip addr show | grep vmbr
 ```
 2: nic0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc fq_codel master vmbr0 state UP group default qlen 1000
 6: vmbr0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UP group default qlen 1000
-    inet 10.0.0.10/24 scope global vmbr0
+    inet 10.0.0.x/24 scope global vmbr0
 7: vmbr1: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc noqueue state UNKNOWN group default qlen 1000
 8: tap300i0: <BROADCAST,MULTICAST,PROMISC,UP,LOWER_UP> mtu 1500 qdisc fq_codel master vmbr0 state UNKNOWN group default qlen 1000
 ```
 
 **Analysis:**
-- vmbr0: Present with correct IP (10.0.0.10/24) ✓
+- vmbr0: Present with correct IP (10.0.0.x/24) ✓
 - vmbr1: Present (internal network, acceptable) ✓
 - vmbr2: NOT PRESENT ✓
 - vmbr3: NOT PRESENT ✓
@@ -420,20 +420,20 @@ sudo tcpdump -i vmbr0 -e -n vlan 40
 
 **From Kali VM console (separate window):**
 ```bash
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 ```
 
 **tcpdump Output (sample):**
 ```
-ethertype 802.1Q (0x8100), length 46: vlan 40, p 0, ethertype ARP (0x0806), Request who-has 10.99.0.1 tell 10.99.0.10, length 28
+ethertype 802.1Q (0x8100), length 46: vlan 40, p 0, ethertype ARP (0x0806), Request who-has 10.99.0.x tell 10.99.0.x, length 28
 ```
 
 **Packets observed:**
 - Ethertype: 802.1Q (VLAN tagged) ✓
 - VLAN tag: 40 ✓
 - Protocol: ARP requests ✓
-- Content: Asking "who has 10.99.0.1" ✓
-- Source: 10.99.0.10 (Kali VM) ✓
+- Content: Asking "who has 10.99.0.x" ✓
+- Source: 10.99.0.x (Kali VM) ✓
 
 **Analysis:**
 - VM is generating VLAN-tagged traffic correctly ✓
@@ -441,7 +441,7 @@ ethertype 802.1Q (0x8100), length 46: vlan 40, p 0, ethertype ARP (0x0806), Requ
 - Proxmox bridge is processing VLAN tags correctly ✓
 - Traffic is reaching vmbr0 on the host ✓
 
-**However:** No ARP replies were observed. Gateway (10.99.0.1) is not responding.
+**However:** No ARP replies were observed. Gateway (10.99.0.x) is not responding.
 
 **Conclusion:** Proxmox side of VLAN configuration is working correctly. Problem is either in physical transmission or on OPNSense side.
 
@@ -453,18 +453,18 @@ ethertype 802.1Q (0x8100), length 46: vlan 40, p 0, ethertype ARP (0x0806), Requ
 
 **From pve-gateway SSH:**
 ```bash
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 ```
 
-**Result:** SUCCESS - Ping replies received from 10.99.0.1.
+**Result:** SUCCESS - Ping replies received from 10.99.0.x.
 
 **This is CRITICAL information:**
 
 **What works:**
-- Proxmox HOST can reach 10.99.0.1 ✓
+- Proxmox HOST can reach 10.99.0.x ✓
 
 **What doesn't work:**
-- VM on Proxmox HOST cannot reach 10.99.0.1 ✗
+- VM on Proxmox HOST cannot reach 10.99.0.x ✗
 
 **Analysis:** OPNSense VLAN interface is functional and responding. The problem is specific to VLAN-tagged traffic from VMs.
 
@@ -492,14 +492,14 @@ ping -c 3 10.99.0.1
 - Status: UP (green indicator) ✓
 - Device: vlan01 ✓
 - VLAN Tag: 40 ✓
-- IPv4 Address: 10.99.0.1/24 ✓
+- IPv4 Address: 10.99.0.x/24 ✓
 - Link Type: static ✓
 
 **VLAN41_SecurityLab2 (vlan02):**
 - Status: UP (green indicator) ✓
 - Device: vlan02 ✓
 - VLAN Tag: 41 ✓
-- IPv4 Address: 10.98.0.1/24 ✓
+- IPv4 Address: 10.98.0.x/24 ✓
 - Link Type: static ✓
 
 **Conclusion:** OPNSense VLAN interfaces are properly configured and operational. Interface status shows no problems.
@@ -515,10 +515,10 @@ ping -c 3 10.99.0.1
 **Test:** Ping from OPNSense to pve-gateway host
 
 **Configuration:**
-- Host: 10.0.0.10
+- Host: 10.0.0.x
 - Click Ping
 
-**Result:** SUCCESS - OPNSense can reach pve-gateway at 10.0.0.10
+**Result:** SUCCESS - OPNSense can reach pve-gateway at 10.0.0.x
 
 **Analysis:** Basic network connectivity between OPNSense and Proxmox is working correctly. No physical layer problems detected.
 
@@ -543,7 +543,7 @@ ping -c 3 10.99.0.1
 
 **From Kali VM console (separate window):**
 ```bash
-ping -c 3 10.99.0.1
+ping -c 3 10.99.0.x
 ```
 
 **Waited for packets to be generated.**
@@ -671,7 +671,7 @@ OPNSense LAN (re0) - VLAN tags NOT present (verified)
 1. Unplug pve-gateway network cable from switch
 2. Plug pve-gateway cable directly into OPNSense LAN port (re0)
 3. Wait 10 seconds for link to establish
-4. From Kali VM console: `ping -c 3 10.99.0.1`
+4. From Kali VM console: `ping -c 3 10.99.0.x`
 
 **Expected Results:**
 
@@ -700,10 +700,10 @@ OPNSense LAN (re0) - VLAN tags NOT present (verified)
 ### Infrastructure Status
 
 **Proxmox Cluster:**
-- pve-gateway: ONLINE (10.0.0.10) ✓
-- pve-services: ONLINE (10.0.0.11) ✓
-- pve-env1: ONLINE (10.0.0.12) ✓
-- pve-SOC: ONLINE (10.0.0.13) ✓
+- pve-gateway: ONLINE (10.0.0.x) ✓
+- pve-services: ONLINE (10.0.0.x) ✓
+- pve-env1: ONLINE (10.0.0.x) ✓
+- pve-SOC: ONLINE (10.0.0.x) ✓
 - Cluster quorum: HEALTHY ✓
 - All nodes communicating properly ✓
 
@@ -715,10 +715,10 @@ OPNSense LAN (re0) - VLAN tags NOT present (verified)
 - WebUI access to all nodes: WORKING ✓
 
 **OPNSense Configuration:**
-- WAN interface (192.168.100.250): OPERATIONAL ✓
-- LAN interface (10.0.0.1): OPERATIONAL ✓
-- VLAN 40 interface (10.99.0.1): CONFIGURED, UP ✓
-- VLAN 41 interface (10.98.0.1): CONFIGURED, UP ✓
+- WAN interface (192.168.100.x): OPERATIONAL ✓
+- LAN interface (10.0.0.x): OPERATIONAL ✓
+- VLAN 40 interface (10.99.0.x): CONFIGURED, UP ✓
+- VLAN 41 interface (10.98.0.x): CONFIGURED, UP ✓
 - Firewall rules: CONFIGURED ✓
 
 **Proxmox VLAN Configuration:**
@@ -768,7 +768,7 @@ OPNSense LAN (re0) - VLAN tags NOT present (verified)
 
 **1. Corosync Configuration Persistence (CRITICAL)**
 
-**Problem:** Every time pve-gateway reboots, /etc/corosync/corosync.conf reverts to showing old IP address (192.168.100.2) instead of new address (10.0.0.10).
+**Problem:** Every time pve-gateway reboots, /etc/corosync/corosync.conf reverts to showing old IP address (192.168.100.x) instead of new address (10.0.0.x).
 
 **Occurrences:**
 - Day 1 (network migration): After migration reboot
@@ -1079,9 +1079,9 @@ ip addr show
 2. Unplug pve-gateway network cable from switch port
 3. Plug pve-gateway cable directly into OPNSense LAN port (re0)
 4. Wait 15 seconds for link establishment
-5. Verify pve-gateway still has network connectivity (ping 10.0.0.1)
+5. Verify pve-gateway still has network connectivity (ping 10.0.0.x)
 6. Start VM 300 (Kali)
-7. From Kali console: ping 10.99.0.1
+7. From Kali console: ping 10.99.0.x
 8. Document result
 ```
 
@@ -1134,7 +1134,7 @@ ip addr show
 # On any cluster node, edit cluster config
 nano /etc/pve/corosync.conf
 
-# Update pve-gateway's ring0_addr to 10.0.0.10
+# Update pve-gateway's ring0_addr to 10.0.0.x
 # Save and let cluster sync propagate
 
 # Restart corosync on all nodes
@@ -1325,7 +1325,7 @@ Procedure:
 3. Check interface status: ip addr show
 4. Check network config: cat /etc/network/interfaces
 5. Restart networking: systemctl restart networking
-6. Verify: ping 10.0.0.1
+6. Verify: ping 10.0.0.x
 7. If successful, verify cluster: pvecm status
 8. If cluster issue, fix corosync (see Corosync Runbook)
 
@@ -1339,12 +1339,12 @@ Title: Restore Cluster Quorum After pve-gateway Reboot
 Symptoms:
 - pve-gateway cannot access VMs after reboot
 - pvecm status shows not quorate
-- Cluster shows old IP (192.168.100.2) for pve-gateway
+- Cluster shows old IP (192.168.100.x) for pve-gateway
 
 Procedure:
 1. On each node, edit: nano /etc/pve/corosync.conf
 2. Find pve-gateway section
-3. Change ring0_addr: 192.168.100.2 → 10.0.0.10
+3. Change ring0_addr: 192.168.100.x → 10.0.0.x
 4. Save file
 5. On each node: systemctl restart corosync
 6. Verify: pvecm status (should show quorate with 4 nodes)

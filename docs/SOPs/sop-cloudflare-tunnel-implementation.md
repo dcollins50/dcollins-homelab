@@ -21,7 +21,7 @@ Internet
 Cloudflare Edge (Tunnel)
    │  outbound-only connection, no inbound port forward on OPNSense WAN
    ▼
-npm-dmz (LXC 2200, pve-env1, VLAN50/DMZ, 10.0.50.69)
+npm-dmz (LXC 2200, pve-env1, VLAN50/DMZ, 10.0.50.x)
    ├── cloudflared  — tunnel daemon, systemd service
    ├── nginx-proxy-manager (Docker) — hostname-based routing, TLS termination
    └── ntfy (Docker) — self-hosted push notification server
@@ -37,7 +37,7 @@ npm-dmz (LXC 2200, pve-env1, VLAN50/DMZ, 10.0.50.69)
 **Host node:** `pve-env1`
 **OS:** Debian 13 (Trixie)
 **Resources:** 1GB RAM / 2 cores / 8GB disk
-**Network:** VLAN 50 (DMZ) tagged at the Proxmox layer, static IP `10.0.50.69/24`, gateway `10.0.50.1`
+**Network:** VLAN 50 (DMZ) tagged at the Proxmox layer, static IP `10.0.50.x/24`, gateway `10.0.50.x`
 
 ### Placement Decision
 Considered all four Proxmox nodes:
@@ -47,7 +47,7 @@ Considered all four Proxmox nodes:
 - `pve-env1` — **selected.** Only shares the node with `kalshi-mm` (a trading bot, lower-severity risk profile, and slated for removal). Confirmed sufficient headroom (14.4G/16.6G available at time of build).
 
 ### DNS Configuration Note
-The container's DNS was initially set to Pi-hole (`192.168.100.1`) during creation, which the DMZ's own firewall rules block (RFC1918 destinations are blocked outbound from DMZ by design). This caused `apt` to hang for minutes per operation. **Corrected DNS to the VLAN gateway (`10.0.50.1`)**, both live and persistently via `pct set 2200 --nameserver 10.0.50.1`.
+The container's DNS was initially set to Pi-hole (`192.168.100.x`) during creation, which the DMZ's own firewall rules block (RFC1918 destinations are blocked outbound from DMZ by design). This caused `apt` to hang for minutes per operation. **Corrected DNS to the VLAN gateway (`10.0.50.x`)**, both live and persistently via `pct set 2200 --nameserver 10.0.50.x`.
 
 ### Firewall Posture (pre-existing on DMZ interface, confirmed sound)
 - Allow DMZ → gateway
@@ -55,7 +55,7 @@ The container's DNS was initially set to Pi-hole (`192.168.100.1`) during creati
 - Allow DMZ → internet (outbound only)
 
 ### New Rule Added
-`LAN net` → `10.0.50.69`, TCP port `81` only — permits ongoing admin access to the NPM web UI from inside the network. No rule permits inbound access to this DMZ from the internet; all public traffic arrives exclusively via the Cloudflare Tunnel.
+`LAN net` → `10.0.50.x`, TCP port `81` only — permits ongoing admin access to the NPM web UI from inside the network. No rule permits inbound access to this DMZ from the internet; all public traffic arrives exclusively via the Cloudflare Tunnel.
 
 ---
 
@@ -79,7 +79,7 @@ Installed inside `npm-dmz`, in order:
 ## 3. Cloudflare Tunnel Setup
 
 ### Prerequisite: Domain on Cloudflare
-Domain `homelab.example` (registered at the registrar) added to Cloudflare on the Free plan. Nameservers at the registrar updated to Cloudflare's assigned pair. **Note:** the registrar's default parking-page DNS records (2× A, `*` and `www` CNAME to `<registrar-parking>`) had to be deleted before `cloudflared` could create its own CNAME routes — they'll conflict otherwise.
+Domain `homelab.example` (registered at Porkbun) added to Cloudflare on the Free plan. Nameservers at Porkbun updated to Cloudflare's assigned pair. **Note:** Porkbun's default parking-page DNS records (2× A, `*` and `www` CNAME to `pixie.porkbun.com`) had to be deleted before `cloudflared` could create its own CNAME routes — they'll conflict otherwise.
 
 ### Authentication
 ```bash
@@ -91,13 +91,13 @@ Opens a URL for browser-based authorization against the target zone. Requires th
 ```bash
 cloudflared tunnel create web-tunnel
 ```
-Tunnel ID: `<tunnel-id-redacted>`. Credentials written to `/root/.cloudflared/<tunnel-id>.json`.
+Tunnel ID: `[uuid]`. Credentials written to `/root/.cloudflared/<tunnel-id>.json`.
 
 ### Config File
 `/root/.cloudflared/config.yml` (copied to `/etc/cloudflared/config.yml` automatically by service install):
 ```yaml
-tunnel: <tunnel-id-redacted>
-credentials-file: /root/.cloudflared/<tunnel-id-redacted>.json
+tunnel: [uuid]
+credentials-file: /root/.cloudflared/[uuid].json
 
 ingress:
   - hostname: homelab.example

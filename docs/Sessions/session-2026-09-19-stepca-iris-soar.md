@@ -38,7 +38,7 @@ date: 2026-09-19
 
 **Placement decision:** pve-env2 is capped out for the core SOC stack (remaining capacity reserved for additional Wazuh agents), so DFIR-IRIS was deployed as an LXC/VM on **pve-env1** instead, not pve-env2.
 
-**Build:** pve-iris is a full clone of VM 603 (`docker-host.template`), assigned VMID 604, hostname `pve-iris`, on VLAN10 (SOC), sized 4 vCPU / 8GB RAM. Its IP had to be corrected to 10.0.10.13/24 after discovering the cloned template still carried soar-host's old IP (10.0.10.12), which would have conflicted with soar-host (VM 602) itself.
+**Build:** pve-iris is a full clone of VM 603 (`docker-host.template`), assigned VMID 604, hostname `pve-iris`, on VLAN10 (SOC), sized 4 vCPU / 8GB RAM. Its IP had to be corrected to 10.0.10.x/24 after discovering the cloned template still carried soar-host's old IP (10.0.10.x), which would have conflicted with soar-host (VM 602) itself.
 
 **Software:** IRIS v2.4.29, deployed via Docker Compose, fronted by NPM with a properly signed internal PKI cert (`iris.homelab.local`).
 
@@ -57,7 +57,7 @@ date: 2026-09-19
 
 ## 4. Shuffle SOAR Deployment
 
-**Build:** Deployed on soar-host (VM 602, pve-env1, 10.0.10.12). Docker installed, repo cloned, OpenSearch prerequisites completed. All six containers (frontend, backend, worker, orborus, security, opensearch) confirmed running.
+**Build:** Deployed on soar-host (VM 602, pve-env1, 10.0.10.x). Docker installed, repo cloned, OpenSearch prerequisites completed. All six containers (frontend, backend, worker, orborus, security, opensearch) confirmed running.
 
 **Firewall rule added:** Workstation to soar-host, ports 3001 and 3443, via a `soar_host` alias, to reach the web UI.
 

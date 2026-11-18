@@ -13,7 +13,7 @@ status: complete
 
 ## Why this is an SOP and not just "read the ELK runbook"
 
-<!-- redacted: operational security detail redacted for public repo -->
+Onboarding a source touches four different tools in a specific dependency order — OPNSense, Logstash, the internal PKI, and Kibana — and doing them out of order is exactly how the two real incidents on record here happened (the Jetson Filebeat outage, a silently-blocked firewall rule with logging disabled; and the shard-limit outage, from indices with no retention policy attached).
 
 ## Order matters — do not skip ahead
 
@@ -23,7 +23,7 @@ Confirm or add the firewall rule permitting the new source's VLAN to reach Logst
 
 → [[opnsense-add-firewall-rule|Add a Firewall Rule]]
 
-<!-- redacted: operational security detail redacted for public repo -->
+**This is the step most likely to be silently skipped**, because a missing rule with logging disabled produces no visible trace — it looks like a Logstash or application problem instead. This was the actual root cause of the Jetson Filebeat outage.
 
 ### 2. TLS, if this is a new pipeline file
 

@@ -12,7 +12,7 @@ A GitHub-ready version of this plan is published at `docs/change-management/dhcp
 Daniel wants proper DHCP across the stack and expects it to make remote provisioning more reliable. Today everything is static. DHCP was deliberately deferred during the VLAN51 build as a large project for later ([[VLAN51]]). DNS was added to this project the same day: Daniel wants to move off Pi-hole as the main resolver to a more mature setup, with Unbound.
 
 ## Decisions (Daniel, Sep 23, 2026)
-- No DHCP service is running on OPNsense today.
+- No DHCP service is running on OPNsense today. **Corrected Oct 31, 2026: this is wrong for [[VLAN40]].** A DHCP broadcast from kali-attack was answered by `10.99.0.x` (OPNsense) with DNS `192.168.100.x, 10.99.0.x`, domain `homelab.local`, 2h lease. The jetson renews hourly. Which service and which interfaces serve DHCP is not recorded yet; check the other VLANs before Phase 2. See [[dns-phase1-consolidation]].
 - DNS migration is part of this project.
 - Unbound on [[opnsense]] becomes the resolver for the stack. Pi-hole on [[heimdall]] keeps running for domain blocking.
 - VLAN11 is built with DHCP from the start and is the pilot. See [[aiops-vlan-build]].
@@ -29,9 +29,10 @@ Daniel wants proper DHCP across the stack and expects it to make remote provisio
 DHCP does not by itself make provisioning more reliable. Reliability comes from the reservation, the DNS record and the firewall rules all existing before the host boots. Past incidents here were DNS, firewall and drifted-config problems, not addressing problems. The real gains are one central place for addresses, no per-host netplan edits, and a provisioning flow that can be automated.
 
 ## Current DNS state (from the vault, may be stale)
-- [[VLAN20]] DNS is restricted to Pi-hole (192.168.100.1). [[VLAN10]] is restricted to OPNsense. [[VLAN30]] and [[VLAN51]] use Unbound on their gateway. The network MOC says Pi-hole is primary for all VLANs, so these disagree.
-- Pi-hole holds local records, most pointing at the internal NPM (10.0.20.30). Unbound holds host overrides for `homelab.example` names. The Sept 15 incident found a stray `::1` AAAA record in Pi-hole answering alongside a correct Unbound A record.
+- [[VLAN20]] DNS is restricted to Pi-hole (192.168.100.x). [[VLAN10]] is restricted to OPNsense. [[VLAN30]] and [[VLAN51]] use Unbound on their gateway. The network MOC says Pi-hole is primary for all VLANs, so these disagree.
+- Pi-hole holds local records, most pointing at the internal NPM (10.0.20.x). Unbound holds host overrides for `homelab.example` names. The Sept 15 incident found a stray `::1` AAAA record in Pi-hole answering alongside a correct Unbound A record.
 - The Proxmox nodes resolve through Pi-hole.
+- Verified Oct 4, 2026 from ubuntu-401: Unbound on the VLAN30 gateway has no forwarding for `homelab.local` and returns NXDOMAIN. Pi-hole answers those names. See [[session-2026-10-04-opnsense-25-7-11-patch]].
 
 ## Proposed DNS design
 - Unbound is the only resolver hosts and DHCP clients see, on each VLAN's gateway address.
@@ -43,7 +44,7 @@ DHCP does not by itself make provisioning more reliable. Reliability comes from 
 
 ## Open DNS decisions and proposals
 - **Internal domain (decided: `.internal`).** `.local` was ruled out. It is the multicast DNS namespace (RFC 6762). Software is expected to resolve it over multicast instead of forwarding it to a DNS server, so unicast `.local` only works on clients configured to allow it. That is manageable on servers Daniel controls and not realistic for phones, laptops, guests or client environments. Options: `.internal` (reserved permanently by ICANN in July 2024 for private use, resolved by normal DNS, not yet an IETF standard) or `home.arpa` (RFC 8375, longer). Daniel chose `.internal` on Sep 23, 2026. Switching means updating overrides, reissuing certificates that name `homelab.local` hosts, and updating configs that reference those names. Transition path: Unbound serves both zones until `.local` is retired. DHCP hands out the search domain, so decide before building DHCP. Authentik is internal-only but uses an `authentik.homelab.example` name whose OIDC URLs are baked into step-ca and Cloudflare configuration, so it is a candidate exception.
-- **Zone apex (proposed, not agreed).** Use `homelab.internal`, so existing names map one to one (`x.homelab.local` becomes `x.homelab.internal`) and other environments, such as a client site, can get their own zone later. DHCP hands out this domain as the search domain.
+- **Zone apex (agreed Oct 4, 2026).** Use `homelab.internal`, so existing names map one to one (`x.homelab.local` becomes `x.homelab.internal`) and other environments, such as a client site, can get their own zone later. DHCP hands out this domain as the search domain.
 - **Fail open with alerts (decided).** Proposed implementation: a single forward zone to Pi-hole with Unbound's `forward-first` enabled, so a failed forwarder falls back to normal recursion. Verified caveats: do not add a public resolver as a second forwarder, because Unbound picks among forwarders at random within an RTT band and would bypass Pi-hole while it is healthy. `forward-first` only triggers on SERVFAIL, and fallback can be slow, so test it. It may need a custom Unbound config include on OPNsense. Alerts, through Uptime Kuma to ntfy: Pi-hole unreachable, and a canary check that a domain Pi-hole always blocks does not resolve normally through Unbound, which catches silent bypass. Exact Kuma capabilities to verify in the build.
 
 ## Proposed DHCP design
@@ -81,4 +82,5 @@ Reserve what a host already has. Create a reservation with its current MAC and c
 - [[opnsense]]
 - [[heimdall]]
 - [[aiops-vlan-build]]
+- [[dns-phase1-consolidation]] (detailed phase 1 plan, Oct 31, 2026)
 - [[opnsense-add-vlan-interface|Add a VLAN Interface]]

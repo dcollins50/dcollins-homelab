@@ -8,7 +8,7 @@ status: live
 A new dedicated VLAN, 10.0.11.0/24, for AIops ([[VLAN11]]). The [[jetson-orin-nano]] moves out of [[VLAN40]] onto it. Decided Sep 23, 2026. Daniel never had a fixed plan for where the jetson should live and wants it where it is useful.
 
 ## Address and Tailscale
-The jetson's address will be 10.0.11.10, as a DHCP reservation. VLAN11 is the pilot for [[dhcp-dns-rollout]]. It stays on Tailscale, so the VLAN allows it outbound TCP 443. Daniel accepted that this is an exfiltration path from a host that reads untrusted text (Sep 23, 2026). Proposed, not yet agreed: the 443 rule excludes RFC1918 destinations so it cannot reach internal hosts.
+The jetson's address will be 10.0.11.x, as a DHCP reservation. VLAN11 is the pilot for [[dhcp-dns-rollout]]. It stays on Tailscale, so the VLAN allows it outbound TCP 443. Daniel accepted that this is an exfiltration path from a host that reads untrusted text (Sep 23, 2026). Proposed, not yet agreed: the 443 rule excludes RFC1918 destinations so it cannot reach internal hosts.
 
 ## Alert routing
 It is only Daniel for now. If this system is provisioned for another user or org, alert routing has to be configurable per recipient.

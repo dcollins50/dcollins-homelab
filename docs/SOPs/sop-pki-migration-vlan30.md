@@ -25,8 +25,8 @@ This touched OPNSense (new aliases, new scoped firewall rules), the two CA VMs t
 2. **Created host aliases ahead of the migration**, rather than relying on the existing blanket "Allow LAN to DEV" rule: `pve_ca_root` and `pve_ca_intermediate`.
 3. **Added scoped workstation-to-host SSH rules** for each alias, narrower than the blanket rule.
 4. **Reassigned IPs:**
-   - [[pve-ca-root]]: 10.0.0.20 (unconfirmed) → **10.0.30.21**
-   - [[pve-ca-intermediate]]: 10.0.0.21 (confirmed) → **10.0.30.22**
+   - [[pve-ca-root]]: 10.0.0.x (unconfirmed) → **10.0.30.x**
+   - [[pve-ca-intermediate]]: 10.0.0.x (confirmed) → **10.0.30.x**
 5. **Verified the migration:**
    - SSH reachable at both new addresses
    - Old addresses unreachable

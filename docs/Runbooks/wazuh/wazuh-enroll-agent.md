@@ -4,7 +4,7 @@ type: runbook
 tool: wazuh
 ---
 
-Install and enroll a new Wazuh agent against [[wazuh-manager]] (10.0.10.11). Written up from the actual rollout that enrolled 8 agents in April 2026 (VM 401, all 4 Proxmox hosts, services-host, soc-stack, Jetson), not from vendor docs, so the steps below are what actually worked here, including a correction discovered mid-rollout.
+Install and enroll a new Wazuh agent against [[wazuh-manager]] (10.0.10.x). Written up from the actual rollout that enrolled 8 agents in April 2026 (VM 401, all 4 Proxmox hosts, services-host, soc-stack, Jetson), not from vendor docs, so the steps below are what actually worked here, including a correction discovered mid-rollout.
 
 ## Prerequisites
 
@@ -25,13 +25,13 @@ On the Jetson (arm64), the same commands resolved the correct architecture autom
 ```xml
 <client>
   <server>
-    <address>10.0.10.11</address>
+    <address>10.0.10.x</address>
     <port>1514</port>
     <protocol>tcp</protocol>
   </server>
   <enrollment>
     <enabled>yes</enabled>
-    <manager_address>10.0.10.11</manager_address>
+    <manager_address>10.0.10.x</manager_address>
     <port>1515</port>
   </enrollment>
 </client>
@@ -62,8 +62,8 @@ The new agent should show `Active`.
 
 ## Notes
 
-- **Hostname**: the agent registers under the machine's hostname at enrollment time. VM 401 enrolled as `admin-Standard-PC-Q35-ICH9-2009` (the default QEMU machine name) because it was never renamed first. This is still unfixed as of the Sep 24, 2026 session (open item, see [[session-2026-09-24-alert-engineering-baseline]]) and now has 13 alerts of its own from a CIS sshd rule. Rename the VM hostname to something meaningful *before* enrolling to avoid this.
-- **Skipped on purpose**: kalshi-mm and VM 700 were both deliberately not enrolled during the April rollout. kalshi-mm no longer exists (destroyed, per [[homelab-soc]]); VM 700 doesn't exist either.
+- **Hostname**: the agent registers under the machine's hostname at enrollment time. VM 401 enrolled as `[admin-user]-Standard-PC-Q35-ICH9-2009` (the default QEMU machine name) because it was never renamed first. This is still unfixed as of the Sep 24, 2026 session (open item, see [[session-2026-09-24-alert-engineering-baseline]]) and now has 13 alerts of its own from a CIS sshd rule. Rename the VM hostname to something meaningful *before* enrolling to avoid this.
+- **Skipped on purpose**: kalshi-mm and VM 700 were both deliberately not enrolled during the April rollout. kalshi-mm no longer exists (destroyed, per [[SOC-Stack]]); VM 700 doesn't exist either.
 - **Do not enroll**: metasploitable2, DVWA, malware-win11 — intentionally compromised/isolated lab targets, no agent by design.
 
 ## Related

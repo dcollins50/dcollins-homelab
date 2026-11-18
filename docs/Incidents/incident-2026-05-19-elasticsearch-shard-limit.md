@@ -8,7 +8,7 @@ status: resolved
 # Incident: Elasticsearch Shard Limit Exhaustion (INC-2026-001)
 
 **Date:** 2026-05-19 (est. start) to 2026-05-22 (resolved)
-**Systems affected:** soc-stack (VM 600, 10.0.10.10), Elasticsearch, Logstash
+**Systems affected:** soc-stack (VM 600, 10.0.10.x), Elasticsearch, Logstash
 **Severity:** High. All Logstash-managed log ingestion stopped for ~3-4 days.
 **Detected by:** Manual check. No new documents visible in Kibana since May 18.
 **Status:** Resolved (recurred in September, see Related)
@@ -37,7 +37,7 @@ Wazuh was not affected because its own index templates already set `number_of_re
 1. Drop replicas on every existing index. This halved the shard count and unblocked index creation immediately.
 
 ```bash
-curl -sk -u elastic:<password> -X PUT "https://10.0.10.10:9200/*/_settings" \
+curl -sk -u elastic:<password> -X PUT "https://10.0.10.x:9200/*/_settings" \
   -H "Content-Type: application/json" \
   -d '{"index": {"number_of_replicas": 0}}'
 ```

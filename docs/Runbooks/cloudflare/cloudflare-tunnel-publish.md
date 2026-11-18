@@ -17,7 +17,7 @@ A single `cloudflared` instance and tunnel can carry multiple public hostname ro
 
 1. **Build a minimal, single-purpose LXC** on the appropriate DMZ-tier VLAN (unprivileged, Debian, no nesting needed for `cloudflared` — it runs natively, no Docker required).
 
-2. **Scope firewall rules narrowly** before installing anything: DNS/NTP to the VLAN's own gateway, and outbound to Cloudflare's published edge IPv4 ranges (`cloudflare.com/ips-v4`) on 443 — this single range covers both the tunnel connection itself and package installs pulled through Cloudflare's own CDN.
+2. **Scope firewall rules narrowly** before installing anything: DNS/NTP to the VLAN's own gateway, and outbound to Cloudflare's published edge IPv4 ranges (`cloudflare.com/ips-v4`, alias `cf_edge_ipv4`) on **7844 TCP and UDP** for the tunnel connection itself, plus 443 TCP for package installs from `pkg.cloudflare.com`. Corrected Oct 17, 2026: this step used to say 443 covers the tunnel connection. Cloudflare's docs say cloudflared connects on 7844 (QUIC over UDP, falling back to HTTP/2 over TCP). On [[pve-stepca-tunnel]] the alias `cf_tunnel_ports` (7844) was used and four QUIC connections registered; check `journalctl -u cloudflared` for `protocol=quic` on the `Registered tunnel connection` lines.
 
 3. **Create the tunnel** in the Zero Trust dashboard (Networking → Tunnels → Create a tunnel → Cloudflared), name it distinctly from any existing tunnel.
 

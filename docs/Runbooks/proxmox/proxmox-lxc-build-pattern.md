@@ -40,6 +40,8 @@ net.ipv6.conf.eth0.disable_ipv6 = 1
 EOF
 sysctl --system
 ```
+**Exception for an LXC that runs the WARP client** (added Oct 3, 2026): set `net.ipv6.conf.default.disable_ipv6 = 0` on a line after the `all` line, in this file and in `/etc/sysctl.conf`, and keep `all` and `eth0` at 1. See [[cloudflare-warp-mesh-node-headless]].
+
 Verify after a reboot, not just after `sysctl -p` — the systemd-sysctl bug below can prevent this from actually applying at boot even though a manual apply looks like it worked.
 
 **2. `apt update` fails on `http://` sources despite an apparently-correct firewall rule.** Debian 13's default `sources.list` uses `http://`, which a rule scoped to port 443 will correctly block. Fix by rewriting to `https://`, don't open port 80:

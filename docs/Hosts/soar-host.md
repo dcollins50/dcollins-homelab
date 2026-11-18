@@ -3,13 +3,13 @@ name: soar-host
 type: vm
 vmid: 602
 node: pve-env1
-ip: 10.0.10.12
+ip: 10.0.10.x
 vlan: VLAN10
 status: live
 role: Shuffle SOAR — alert automation
 ---
 
-**Login:** `admin`, SSH key auth (key copied Sep 25, 2026, confirmed with BatchMode test).
+**Login:** `[admin-user]`, SSH key auth (key copied Sep 25, 2026, confirmed with BatchMode test).
 
 Deployed Sep 19, 2026. Docker installed, repo cloned, OpenSearch prerequisites completed. All six containers running: frontend, backend, worker, orborus, security, opensearch.
 

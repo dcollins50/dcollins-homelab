@@ -25,14 +25,15 @@ Eight machines, all showing Connected, all under one account.
 
 | Machine | Tailscale IP | Client version | Notes |
 |---------|--------------|----------------|-------|
-| <host-redacted> | <tailscale-ip> | 1.102.2 at screenshot | Windows 11 workstation, updated since (new version not verified) |
-| [[heimdall]] | <tailscale-ip> | 1.102.4 | Tailscale SSH server enabled, intentional |
-| jetson | <tailscale-ip> | 1.102.4 | See [[jetson-orin-nano]] |
-| [[pve-env1]] | <tailscale-ip> | 1.102.4 | |
-| [[pve-env2]] | <tailscale-ip> | 1.102.4 | |
-| [[pve-gateway]] | <tailscale-ip> | 1.102.4 | |
-| [[pve-services]] | <tailscale-ip> | 1.102.4 | |
-| [[services-host]] | <tailscale-ip> | 1.102.4 | Was logged out earlier the same day, see below |
+| [workstation] | 100.x.x.x | 1.102.2 at screenshot | Windows 11 workstation, updated since (new version not verified) |
+| [[heimdall]] | 100.x.x.x | 1.102.4 | Tailscale SSH server enabled, intentional |
+| jetson | 100.x.x.x | 1.102.4 | See [[jetson-orin-nano]] |
+| [[pve-env1]] | 100.x.x.x | 1.102.4 | |
+| [[pve-env2]] | 100.x.x.x | 1.102.4 | |
+| [[pve-gateway]] | 100.x.x.x | 1.102.4 | |
+| [[pve-services]] | 100.x.x.x | 1.102.4 | |
+| [[services-host]] | 100.x.x.x | 1.102.4 | Was logged out earlier the same day, see below |
+| [admin-user]-worktop | 100.x.x.x | not recorded | Laptop. Added Oct 23, 2026. Reaches [[nimbus]] on 443 only. Whether it is employer-managed was not confirmed. |
 
 All four Proxmox nodes are on the tailnet. [[opnsense]] is not.
 

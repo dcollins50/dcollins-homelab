@@ -17,7 +17,7 @@ Checked login method across all 17 hosts Daniel gave credentials for. Split:
 
 ## WSL setup blockers hit and resolved
 
-- WSL has its own home directory, separate from Windows — `~/.ssh` didn't exist in WSL even though a key existed under `/mnt/c/Users/Owner/.ssh/`
+- WSL has its own home directory, separate from Windows — `~/.ssh` didn't exist in WSL even though a key existed under `/mnt/c/Users/[user]/.ssh/`
 - Copied `id_ed25519`/`id_ed25519.pub` into WSL's `~/.ssh`, fixed permissions (`chmod 700` on the dir, `600` on the private key — files under `/mnt/c/` mount world-writable by default, which SSH refuses)
 - `ssh-agent` wasn't running in the WSL session; `ssh-add -l` failed with "could not open a connection to your authentication agent" until `eval "$(ssh-agent -s)"` was run
 - The private key itself is passphrase-protected; `ssh-add` prompted for it, resolved by entering it

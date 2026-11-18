@@ -80,11 +80,11 @@ Before building anything, it helps to understand what you are looking at. Every 
 
 # **3. Prerequisites**
 
-- Wazuh Manager v4.14.4 running on VM 601 (10.0.10.11)
+- Wazuh Manager v4.14.4 running on VM 601 (10.0.10.x)
 
 - At least 8 Wazuh agents enrolled and reporting
 
-- Elasticsearch and Kibana 8.19 running on VM 600 (10.0.10.10)
+- Elasticsearch and Kibana 8.19 running on VM 600 (10.0.10.x)
 
 - wazuh-alerts-4.x-* index pattern exists in Kibana with data present
 

@@ -66,15 +66,15 @@ Before beginning, confirm the full VLAN plan. The table below is the authoritati
 
 | VLAN ID | Name | Subnet | Gateway | Purpose | Status |
 |---------|------|--------|---------|---------|--------|
-| 1 | LAN | 10.0.0.0/24 | 10.0.0.1 | Infrastructure management | Live |
-| 10 | SOC | 10.0.10.0/24 | 10.0.10.1 | Security operations center | Live |
-| 20 | Services1 | 10.0.20.0/24 | 10.0.20.1 | Production services (tier 1) | Live |
-| 30 | Services2 | 10.0.30.0/24 | 10.0.30.1 | Trusted services (tier 2) | Live |
-| 40 | SecurityLab1 | 10.99.0.0/24 | 10.99.0.1 | Isolated attack/lab environment | Live |
-| 41 | SecurityLab2 | 10.98.0.0/24 | 10.98.0.1 | Isolated attack/lab environment | Live |
-| 50 | DMZ | 10.0.50.0/24 | 10.0.50.1 | Demilitarized zone | Live |
-| 51 | SSH Bastion | 10.0.51.0/24 | 10.0.51.1 | SSH bastion host | Planned |
-| 60 | Storage | 10.0.60.0/24 | 10.0.60.1 | NAS/storage network | Live |
+| 1 | LAN | 10.0.0.0/24 | 10.0.0.x | Infrastructure management | Live |
+| 10 | SOC | 10.0.10.0/24 | 10.0.10.x | Security operations center | Live |
+| 20 | Services1 | 10.0.20.0/24 | 10.0.20.x | Production services (tier 1) | Live |
+| 30 | Services2 | 10.0.30.0/24 | 10.0.30.x | Trusted services (tier 2) | Live |
+| 40 | SecurityLab1 | 10.99.0.0/24 | 10.99.0.x | Isolated attack/lab environment | Live |
+| 41 | SecurityLab2 | 10.98.0.0/24 | 10.98.0.x | Isolated attack/lab environment | Live |
+| 50 | DMZ | 10.0.50.0/24 | 10.0.50.x | Demilitarized zone | Live |
+| 51 | SSH Bastion | 10.0.51.0/24 | 10.0.51.x | SSH bastion host | Planned |
+| 60 | Storage | 10.0.60.0/24 | 10.0.60.x | NAS/storage network | Live |
 
 **Physical Topology:**
 ```
@@ -148,17 +148,17 @@ Device Name | Current IP | MAC Address | Gateway | Purpose
 ### 3.1 Factory Default Access
 
 **Step 3.1.1:** Identify switch default IP address
-- TP-Link switches typically use 192.168.0.1
+- TP-Link switches typically use 192.168.0.x
 - Check label on switch or manufacturer documentation
 - Default credentials are usually admin/admin or admin/[blank]
 
 **Step 3.1.2:** Configure workstation for direct switch access
 - Disconnect workstation from all networks
 - Connect workstation directly to switch (any port except uplink)
-- Configure workstation static IP: Address 192.168.0.2, Subnet 255.255.255.0
+- Configure workstation static IP: Address 192.168.0.x, Subnet 255.255.255.0
 
 **Step 3.1.3:** Access switch web interface
-- Open browser to http://192.168.0.1
+- Open browser to http://192.168.0.x
 - Login with default credentials
 - Navigate to System or Network settings
 
@@ -166,14 +166,14 @@ Device Name | Current IP | MAC Address | Gateway | Purpose
 
 **Step 3.2.1:** Change switch management IP to match production network
 - Navigate to Network -> IP Configuration (or equivalent)
-- Configure static IP: 10.0.0.100, Subnet 255.255.255.0, Gateway 10.0.0.1
+- Configure static IP: 10.0.0.x, Subnet 255.255.255.0, Gateway 10.0.0.x
 - Save configuration
 
 **Step 3.2.2:** Verify new IP accessibility
 - Change workstation back to DHCP or production IP
 - Connect workstation to production network
-- Verify connectivity: `ping 10.0.0.100`
-- Access web interface at new IP: http://10.0.0.100
+- Verify connectivity: `ping 10.0.0.x`
+- Access web interface at new IP: http://10.0.0.x
 
 > **CHECKPOINT 1:** Can you access the switch at its new management IP? If NO, connect directly to switch and reconfigure management IP.
 
@@ -204,14 +204,14 @@ Device Name | Current IP | MAC Address | Gateway | Purpose
 **Step 4.1.4:** Configure temporary LAN interface via console
 - Select Option 2: Set interface(s) IP address
 - Select LAN interface
-- Configure static IP: 10.0.0.1/24
+- Configure static IP: 10.0.0.x/24
 - Do not configure gateway (LAN is internal)
-- Enable DHCP on LAN: No (optional: Yes for range 10.0.0.100-10.0.0.200)
+- Enable DHCP on LAN: No (optional: Yes for range 10.0.0.x-10.0.0.x)
 
 **Step 4.1.5:** Verify console configuration
 - Display all interface configuration (Option 8)
 - Confirm WAN has IP and gateway
-- Confirm LAN has IP 10.0.0.1
+- Confirm LAN has IP 10.0.0.x
 
 > **CHECKPOINT 2:** Can you ping the OPNSense LAN IP from your workstation? If NO, verify physical connectivity and workstation IP configuration.
 
@@ -220,7 +220,7 @@ Device Name | Current IP | MAC Address | Gateway | Purpose
 **Step 4.2.1:** Access OPNSense web interface
 - Connect workstation to LAN side of OPNSense
 - Ensure workstation has IP in LAN subnet (10.0.0.x)
-- Navigate to https://10.0.0.1
+- Navigate to https://10.0.0.x
 - Accept self-signed certificate warning
 - Login with default credentials (root/opnsense)
 
@@ -275,7 +275,7 @@ This section uses a standardized procedure. Refer to the VLAN Reference Table in
 ### 6.1 Enable 802.1Q VLAN Mode
 
 **Step 6.1.1:** Access switch VLAN configuration
-- Login to switch web interface at http://10.0.0.100
+- Login to switch web interface at http://10.0.0.x
 - Navigate to VLAN -> 802.1Q VLAN Configuration
 
 **Step 6.1.2:** Enable 802.1Q VLAN
@@ -343,16 +343,16 @@ For each Live VLAN in the VLAN Reference Table, create and configure VLAN member
 - Enable: Check "Enable interface"
 - Description: LAN or MGMT
 - IPv4 Configuration Type: Static IPv4
-- IPv4 Address: 10.0.0.1 / 24
+- IPv4 Address: 10.0.0.x / 24
 - Gateway: None (internal interface)
 - Click Save, then Apply Changes
 
 **Step 7.1.3:** Test management access via new VLAN 1 interface
-- Open a new browser tab and navigate to https://10.0.0.1
+- Open a new browser tab and navigate to https://10.0.0.x
 - Verify OPNSense web interface loads
 - Keep both tabs open during remaining configuration
 
-> **CHECKPOINT 6:** Can you access OPNSense via https://10.0.0.1? If NO, verify switch port 5 is tagged for VLAN 1 - see Recovery Procedure B.
+> **CHECKPOINT 6:** Can you access OPNSense via https://10.0.0.x? If NO, verify switch port 5 is tagged for VLAN 1 - see Recovery Procedure B.
 
 ### 7.2 Assign Remaining VLAN Interfaces (Standardized Procedure)
 
@@ -547,7 +547,7 @@ The following table defines the intended firewall policy for each VLAN. Use this
 ### 9.1 Management VLAN Connectivity
 
 **Test 9.1.1:** Workstation to OPNSense
-- From workstation on management VLAN (10.0.0.x): `ping 10.0.0.1`
+- From workstation on management VLAN (10.0.0.x): `ping 10.0.0.x`
 - Expected: Success
 - If fails: Check switch port configuration and workstation IP
 
@@ -569,14 +569,14 @@ The following table defines the intended firewall policy for each VLAN. Use this
 - If unexpected result: Check firewall rules on MGMT interface
 
 **Test 9.2.2:** Each VLAN to Management
-- From device on each VLAN, ping 10.0.0.1
+- From device on each VLAN, ping 10.0.0.x
 - Expected result varies by VLAN policy (see Firewall Policy Reference in Section 8.2)
 - If unexpected result: Check firewall rules for that VLAN interface
 
 ### 9.3 Security Lab Isolation
 
 **Test 9.3.1:** Security Lab to Management VLAN
-- From device on VLAN 40 or 41: `ping 10.0.0.1`
+- From device on VLAN 40 or 41: `ping 10.0.0.x`
 - Expected: Block / Timeout
 - **If succeeds: CRITICAL - firewall rules are incorrect, fix immediately**
 
@@ -621,7 +621,7 @@ The following table defines the intended firewall policy for each VLAN. Use this
 
 ### Recovery Procedure B: Lost Access to OPNSense After VLAN 1 Configuration
 
-**Symptom:** Cannot access OPNSense web interface at 10.0.0.1 after creating VLAN 1 interface.
+**Symptom:** Cannot access OPNSense web interface at 10.0.0.x after creating VLAN 1 interface.
 
 **Root Cause:** Switch port 5 is still Untagged for VLAN 1, but OPNSense is now sending tagged VLAN 1 traffic.
 
@@ -630,7 +630,7 @@ The following table defines the intended firewall policy for each VLAN. Use this
 2. Select Option 8: Shell
 3. Run `ifconfig` to verify VLAN 1 interface exists and has correct IP
 4. Access switch web interface and configure port 5 as Tagged for VLAN 1
-5. Test access to OPNSense at 10.0.0.1
+5. Test access to OPNSense at 10.0.0.x
 
 **Prevention:** Verify switch port 5 configuration matches OPNSense VLAN configuration before applying changes.
 
@@ -846,15 +846,15 @@ The following table is the authoritative reference for all VLANs in this environ
 
 | VLAN ID | Name | Subnet | Gateway | Purpose | Status |
 |---------|------|--------|---------|---------|--------|
-| 1 | LAN | 10.0.0.0/24 | 10.0.0.1 | Infrastructure management | Live |
-| 10 | SOC | 10.0.10.0/24 | 10.0.10.1 | Security operations center | Live |
-| 20 | Services1 | 10.0.20.0/24 | 10.0.20.1 | Production services (tier 1) | Live |
-| 30 | Services2 | 10.0.30.0/24 | 10.0.30.1 | Trusted services (tier 2) | Live |
-| 40 | SecurityLab1 | 10.99.0.0/24 | 10.99.0.1 | Isolated attack/lab environment | Live |
-| 41 | SecurityLab2 | 10.98.0.0/24 | 10.98.0.1 | Isolated attack/lab environment | Live |
-| 50 | DMZ | 10.0.50.0/24 | 10.0.50.1 | Demilitarized zone | Live |
-| 51 | SSH Bastion | 10.0.51.0/24 | 10.0.51.1 | SSH bastion host | Planned |
-| 60 | Storage | 10.0.60.0/24 | 10.0.60.1 | NAS/storage network | Live |
+| 1 | LAN | 10.0.0.0/24 | 10.0.0.x | Infrastructure management | Live |
+| 10 | SOC | 10.0.10.0/24 | 10.0.10.x | Security operations center | Live |
+| 20 | Services1 | 10.0.20.0/24 | 10.0.20.x | Production services (tier 1) | Live |
+| 30 | Services2 | 10.0.30.0/24 | 10.0.30.x | Trusted services (tier 2) | Live |
+| 40 | SecurityLab1 | 10.99.0.0/24 | 10.99.0.x | Isolated attack/lab environment | Live |
+| 41 | SecurityLab2 | 10.98.0.0/24 | 10.98.0.x | Isolated attack/lab environment | Live |
+| 50 | DMZ | 10.0.50.0/24 | 10.0.50.x | Demilitarized zone | Live |
+| 51 | SSH Bastion | 10.0.51.0/24 | 10.0.51.x | SSH bastion host | Planned |
+| 60 | Storage | 10.0.60.0/24 | 10.0.60.x | NAS/storage network | Live |
 
 ---
 
@@ -874,7 +874,7 @@ The following table is the authoritative reference for all VLANs in this environ
 ### Switch Configuration Checklist
 
 - [ ] Switch accessible at default IP
-- [ ] Management IP configured and accessible at 10.0.0.100
+- [ ] Management IP configured and accessible at 10.0.0.x
 - [ ] 802.1Q VLAN mode enabled
 - [ ] VLAN 1 (LAN) configured with correct port memberships
 - [ ] VLAN 10 (SOC) configured with correct port memberships
@@ -892,14 +892,14 @@ The following table is the authoritative reference for all VLANs in this environ
 - [ ] WAN interface configured with internet access
 - [ ] LAN interface configured for initial management access
 - [ ] Web interface accessible
-- [ ] VLAN 1 device created and interface configured (10.0.0.1)
-- [ ] VLAN 10 device created and interface configured (10.0.10.1)
-- [ ] VLAN 20 device created and interface configured (10.0.20.1)
-- [ ] VLAN 30 device created and interface configured (10.0.30.1)
-- [ ] VLAN 40 device created and interface configured (10.99.0.1)
-- [ ] VLAN 41 device created and interface configured (10.98.0.1)
-- [ ] VLAN 50 device created and interface configured (10.0.50.1)
-- [ ] VLAN 60 device created and interface configured (10.0.60.1)
+- [ ] VLAN 1 device created and interface configured (10.0.0.x)
+- [ ] VLAN 10 device created and interface configured (10.0.10.x)
+- [ ] VLAN 20 device created and interface configured (10.0.20.x)
+- [ ] VLAN 30 device created and interface configured (10.0.30.x)
+- [ ] VLAN 40 device created and interface configured (10.99.0.x)
+- [ ] VLAN 41 device created and interface configured (10.98.0.x)
+- [ ] VLAN 50 device created and interface configured (10.0.50.x)
+- [ ] VLAN 60 device created and interface configured (10.0.60.x)
 - [ ] Firewall rules configured for LAN (VLAN 1)
 - [ ] Firewall rules configured for SOC (VLAN 10)
 - [ ] Firewall rules configured for Services1 (VLAN 20)

@@ -10,7 +10,7 @@ Execution of [[standardize-node-clocks-utc]], following the SSH key rollout in [
 
 1. `BatchMode=yes` rejected every host WSL hadn't previously connected to (all 4 Proxmox hosts, Heimdall, both LXC-parent SSH calls), failing with "Host key verification failed" instead of prompting. These hosts had only ever been reached from Windows/PowerShell before, which has its own separate `known_hosts` from WSL. Fixed with `-o StrictHostKeyChecking=accept-new`.
 2. `sudo` over a plain `ssh host "command"` has no TTY to prompt on, failed with "a terminal is required to read the password." Fixed with `ssh -t`.
-3. With `-t` fixed, the sudo prompt just read `[sudo] password for admin:` with no hostname, ambiguous across the 4 VMs that all use the `admin` account (pve-iris, soc-stack, pve-ca-intermediate, soar-host). Fixed using `sudo -p` to build a custom prompt string with the hostname baked in: `[sudo] password for admin@$name: `.
+3. With `-t` fixed, the sudo prompt just read `[sudo] password for [admin-user]:` with no hostname, ambiguous across the 4 VMs that all use the `[admin-user]` account (pve-iris, soc-stack, pve-ca-intermediate, soar-host). Fixed using `sudo -p` to build a custom prompt string with the hostname baked in: `[sudo] password for [admin-user]@$name: `.
 4. Heimdall's username was a guess (`pi`) since it was never recorded in the vault. Failed with "Permission denied (publickey)." Corrected to `admin`, confirmed working.
 
 ## Result: 16 of 16 attempted hosts confirmed UTC

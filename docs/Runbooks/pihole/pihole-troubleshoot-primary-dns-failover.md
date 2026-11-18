@@ -30,7 +30,7 @@ Use this when Heimdall's Pi-hole becomes unreachable or stops resolving, whether
 
 *(fill in once the open item above is resolved)*
 
-- Primary DNS for the homelab VLANs: Heimdall's Pi-hole (192.168.100.1)
+- Primary DNS for the homelab VLANs: Heimdall's Pi-hole (192.168.100.x)
 - Primary DNS for the personal workstation specifically: *unconfirmed, see open item above*
 - Secondary/fallback DNS in place: *unconfirmed*
 
@@ -40,13 +40,13 @@ Use this when Heimdall's Pi-hole becomes unreachable or stops resolving, whether
 
 1. **Is Heimdall itself reachable?**
    ```bash
-   ping 192.168.100.1
+   ping 192.168.100.x
    ```
    If Heimdall is fully down, this is a Heimdall/hardware issue, not a Pi-hole-specific one, see whatever runbook covers Heimdall's WiFi bridge/WireGuard role for broader recovery.
 
 2. **Is Heimdall up but Pi-hole itself not resolving?**
    ```bash
-   dig @192.168.100.1 google.com
+   dig @192.168.100.x google.com
    ```
    Timeout or SERVFAIL here with Heimdall otherwise reachable points at the Pi-hole/FTL service specifically, not the whole device.
 

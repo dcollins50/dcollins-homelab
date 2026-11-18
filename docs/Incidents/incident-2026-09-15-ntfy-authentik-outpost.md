@@ -19,17 +19,17 @@ This turned into a chain of separate bugs, each one uncovered only after fixing 
 
 `docker ps` on npm-dmz showed the `authentik-proxy` outpost container as unhealthy. Its logs showed a DNS resolution failure trying to reach `authentik.homelab.example` to pull config from the Authentik API.
 
-**Cause:** `authentik.homelab.example` had no internal DNS override. npm-dmz's resolver (OPNSense's Unbound at 10.0.50.1) was forwarding the query to public DNS and getting NXDOMAIN, since that hostname was deliberately never given a public Cloudflare record.
+**Cause:** `authentik.homelab.example` had no internal DNS override. npm-dmz's resolver (OPNSense's Unbound at 10.0.50.x) was forwarding the query to public DNS and getting NXDOMAIN, since that hostname was deliberately never given a public Cloudflare record.
 
-**Fix:** Added an Unbound host override (Services > Unbound DNS > Overrides) mapping `authentik.homelab.example` → `10.0.30.10` (the Authentik LXC's IP at the time).
+**Fix:** Added an Unbound host override (Services > Unbound DNS > Overrides) mapping `authentik.homelab.example` → `10.0.30.x` (the Authentik LXC's IP at the time).
 
 ### 2. DMZ → Dev VLAN firewall block
 
-After the DNS fix, the outpost's error changed from DNS failure to `ConnectError ... TimedOut` on `10.0.30.10:443`.
+After the DNS fix, the outpost's error changed from DNS failure to `ConnectError ... TimedOut` on `10.0.30.x:443`.
 
 **Cause:** DMZ's default firewall posture blocks DMZ → all internal RFC1918 networks. There was no explicit allow rule for npm-dmz to reach the Authentik host on Dev VLAN (VLAN30).
 
-**Fix:** Added a Pass rule on the DMZ interface, source `npm_dmz` alias (10.0.50.69), destination `Authentik` alias, placed above the existing "Block DMZ to all internal VLANs" rule (DMZ rules evaluate first-match). Initially scoped to port 443.
+**Fix:** Added a Pass rule on the DMZ interface, source `npm_dmz` alias (10.0.50.x), destination `Authentik` alias, placed above the existing "Block DMZ to all internal VLANs" rule (DMZ rules evaluate first-match). Initially scoped to port 443.
 
 ### 3. Wrong destination port (connection refused)
 
@@ -72,16 +72,16 @@ Fixing #3 (adding `:9443` to `AUTHENTIK_HOST_BROWSER`) broke browser access to A
 **Cause:** `AUTHENTIK_HOST` (server-to-server, outpost talking to Authentik) and `AUTHENTIK_HOST_BROWSER` (what the browser gets redirected to) serve different purposes and shouldn't both carry the internal port. Authentik's own admin-configured Base URL is `https://authentik.homelab.example` with no port at all, and Authentik enforces that its own frontend is only reachable at that exact address. More fundamentally, `authentik.homelab.example` had never been given a real reverse proxy; it was resolving straight to the raw Authentik LXC on its raw container ports, which is why any URL with a port kept breaking.
 
 **Fix:**
-- Set up a proper NPM proxy host for `authentik.homelab.example` on the **internal** NPM instance (10.0.20.30, services-host), not npm-dmz, forwarding to `10.0.30.10:9000` with a real internal PKI (Homelab Intermediate CA) certificate. This matches the pattern used for other internal-only `homelab.local`-style services and keeps Authentik off the public-facing DMZ NPM instance entirely.
-- Repointed the Unbound DNS override for `authentik.homelab.example` from `10.0.30.10` to `10.0.20.30` (the internal NPM, not the raw LXC).
+- Set up a proper NPM proxy host for `authentik.homelab.example` on the **internal** NPM instance (10.0.20.x, services-host), not npm-dmz, forwarding to `10.0.30.x:9000` with a real internal PKI (Homelab Intermediate CA) certificate. This matches the pattern used for other internal-only `homelab.local`-style services and keeps Authentik off the public-facing DMZ NPM instance entirely.
+- Repointed the Unbound DNS override for `authentik.homelab.example` from `10.0.30.x` to `10.0.20.x` (the internal NPM, not the raw LXC).
 - Reverted `AUTHENTIK_HOST_BROWSER` back to `https://authentik.homelab.example`, no port. Left `AUTHENTIK_HOST` at `:9443` (server-to-server, correctly bypasses the proxy).
-- Added a new alias `internal_npm` (10.0.20.30) and a Pass rule on the Services (VLAN20) interface, source `internal_npm`, destination `Authentik` alias, port 9000, placed above the Services→internal-VLANs block rule.
+- Added a new alias `internal_npm` (10.0.20.x) and a Pass rule on the Services (VLAN20) interface, source `internal_npm`, destination `Authentik` alias, port 9000, placed above the Services→internal-VLANs block rule.
 
 ### 8. Stray Pi-hole AAAA record
 
 Even after the internal proxy was live, the browser still failed to connect cleanly.
 
-**Cause:** `nslookup authentik.homelab.example` from the workstation (using Pi-hole, not Unbound, as the client resolver) returned both the correct `10.0.20.30` A record and a stray `::1` AAAA record. Browsers prefer IPv6 when both are present, so the browser was trying to connect to itself (loopback) instead of the internal NPM proxy. This is the same class of split-horizon bug documented from the original Authentik DEV VLAN rework session.
+**Cause:** `nslookup authentik.homelab.example` from the workstation (using Pi-hole, not Unbound, as the client resolver) returned both the correct `10.0.20.x` A record and a stray `::1` AAAA record. Browsers prefer IPv6 when both are present, so the browser was trying to connect to itself (loopback) instead of the internal NPM proxy. This is the same class of split-horizon bug documented from the original Authentik DEV VLAN rework session.
 
 **Fix:** Removed the stray `::1` local DNS record from Pi-hole, leaving only the correct A record.
 
@@ -96,9 +96,9 @@ After all of the above, Chrome's Security tab still showed "not secure / active 
 ## End state
 
 - ntfy alerts work end to end: phone push, browser live updates, and Kuma's automated publish calls all functioning.
-- Authentik now has a proper internal-only reverse proxy through the internal NPM instance (10.0.20.30), consistent with the DNS/PKI pattern used for other internal `homelab.local`-style services, rather than resolving directly to the raw LXC.
+- Authentik now has a proper internal-only reverse proxy through the internal NPM instance (10.0.20.x), consistent with the DNS/PKI pattern used for other internal `homelab.local`-style services, rather than resolving directly to the raw LXC.
 - New firewall paths opened and documented: DMZ (npm-dmz) → Dev (Authentik) on 9443, and Services (internal NPM) → Dev (Authentik) on 9000.
-- New aliases created: `npm_dmz` (10.0.50.69), `internal_npm` (10.0.20.30). Existing `Authentik` alias reused for both new rules.
+- New aliases created: `npm_dmz` (10.0.50.x), `internal_npm` (10.0.20.x). Existing `Authentik` alias reused for both new rules.
 
 ## Open items / things worth double-checking later
 

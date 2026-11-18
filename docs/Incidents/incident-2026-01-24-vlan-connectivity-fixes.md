@@ -16,9 +16,9 @@ status: resolved
 
 ### Symptoms
 - VMs on VLAN 40/41 completely unreachable from all locations
-- Could ping OPNSense VLAN gateway (10.99.0.1, 10.98.0.1) but not VMs
+- Could ping OPNSense VLAN gateway (10.99.0.x, 10.98.0.x) but not VMs
 - VMs could ping each other on same VLAN/host
-- Kali (10.99.0.10), metasploitable2 (10.99.0.20), DVWA (10.99.0.30), malware-win11 (10.98.0.10)
+- Kali (10.99.0.x), metasploitable2 (10.99.0.x), DVWA (10.99.0.x), malware-win11 (10.98.0.x)
 
 ### Root Cause
 Proxmox bridge on pve-gateway not configured to pass VLAN 40/41 traffic on physical interface (nic0).
@@ -49,8 +49,8 @@ Modified vmbr0:
 ```
 auto vmbr0
 iface vmbr0 inet static
-    address 10.0.0.10/24
-    gateway 10.0.0.1
+    address 10.0.0.x/24
+    gateway 10.0.0.x
     bridge-ports nic0
     bridge-stp off
     bridge-fd 0
@@ -61,14 +61,14 @@ iface vmbr0 inet static
 ### Verification
 ```bash
 # From Kali
-ping -c 3 10.99.0.1          # Success
-ping -c 3 10.99.0.30         # Success (DVWA)
+ping -c 3 10.99.0.x          # Success
+ping -c 3 10.99.0.x         # Success (DVWA)
 
 # From workstation
-ping 10.99.0.10              # Success (Kali)
+ping 10.99.0.x              # Success (Kali)
 
 # From OPNSense
-ping -c 3 10.99.0.10         # Success
+ping -c 3 10.99.0.x         # Success
 ```
 
 ---
@@ -76,9 +76,9 @@ ping -c 3 10.99.0.10         # Success
 ## Issue #2: VM 401 (Ubuntu) Can't Reach Gateway (VLAN 30 on pve-env1)
 
 ### Symptoms
-- VM 401 (10.0.30.40) could ping workstation (10.0.0.199) ✓
-- VM 401 could ping Management VLAN gateway (10.0.0.1) ✓
-- VM 401 could NOT ping its own VLAN 30 gateway (10.0.30.1) ✗
+- VM 401 (10.0.30.x) could ping workstation (10.0.0.x) ✓
+- VM 401 could ping Management VLAN gateway (10.0.0.x) ✓
+- VM 401 could NOT ping its own VLAN 30 gateway (10.0.30.x) ✗
 - OPNSense could ping VM 401 ✓
 
 ### Diagnosis Process
@@ -94,11 +94,11 @@ Result: Bridge correctly configured with VLANs 2-4094 on nic0 ✓
 ip addr show
 ip route show
 ```
-Result: VM correctly configured with 10.0.30.40/24, gateway 10.0.30.1 ✓
+Result: VM correctly configured with 10.0.30.x/24, gateway 10.0.30.x ✓
 
 **Step 3: Packet capture on pve-env1**
 ```bash
-sudo tcpdump -i nic0 -nn -e vlan 30 and host 10.0.30.40
+sudo tcpdump -i nic0 -nn -e vlan 30 and host 10.0.30.x
 ```
 Result: Packets leaving nic0 with VLAN 30 tags ✓
 
@@ -108,7 +108,7 @@ Result: **OPNSense receiving pings but NOT responding** ✗
 
 **Step 5: Test OPNSense → VM**
 ```bash
-ping -S 10.0.30.1 10.0.30.40
+ping -S 10.0.30.x 10.0.30.x
 ```
 Result: Works ✓
 
@@ -137,7 +137,7 @@ Missing firewall rules on OPNSense DEV interface. Existing rule only allowed DEV
 - Interface: DEV
 - Protocol: TCP/UDP
 - Source: DEV net
-- Destination: Single host → 192.168.100.1
+- Destination: Single host → 192.168.100.x
 - Destination Port: 53
 - Description: "Allow DEV to Heimdall DNS"
 
@@ -152,7 +152,7 @@ Missing firewall rules on OPNSense DEV interface. Existing rule only allowed DEV
 ### Verification
 ```bash
 # From VM 401
-ping -c 3 10.0.30.1          # Gateway - Success
+ping -c 3 10.0.30.x          # Gateway - Success
 nslookup google.com          # DNS - Success
 ping -c 3 google.com         # Internet - Success
 apt update                   # Package updates - Success

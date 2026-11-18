@@ -28,7 +28,7 @@ Decided Sep 23, 2026, as part of [[dhcp-dns-rollout]]:
 - Authentik is a candidate exception: it is internal-only but uses an `authentik.homelab.example` name whose OIDC URLs are embedded in step-ca and Cloudflare configuration.
 
 ## Still open
-- Zone apex. Proposed `homelab.internal`, not yet agreed.
+- (Resolved Oct 4, 2026: zone apex is `homelab.internal`, agreed by Daniel. `x.homelab.local` becomes `x.homelab.internal`. DHCP hands it out as the search domain. Daniel briefly considered `homelab.lan` the same day and chose to stay with `.internal`, which is reserved for private use, `.lan` is not.)
 - DHCP design details and the phased rollout, in [[dhcp-dns-rollout]].
 
 ## Related

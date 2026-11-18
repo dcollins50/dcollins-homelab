@@ -6,7 +6,7 @@ status: in-progress
 
 # SOP: SSH Bastion Build (VLAN51)
 
-**Status:** In progress. VLAN51, firewall scoping, and the step-ca/Authentik trust pieces are done. The bastion LXC (2202, 10.0.51.10) is built as of Sep 23, 2026. State as of the Sep 21, 2026 session, the last one worked (confirmed by Daniel on Sep 24): WARP device enrollment is blocked by a browser-side `ERR_QUIC_PROTOCOL_ERROR` on the final authorize redirect, sshd cert trust is not configured, the temporary workstation to bastion port 22 rule is not recorded as removed, and the SSH cutover has not happened.
+**Status:** In progress. VLAN51, firewall scoping, and the step-ca/Authentik trust pieces are done. The bastion LXC (2202, 10.0.51.x) is built as of Sep 23, 2026. State as of the Sep 21, 2026 session, the last one worked (confirmed by Daniel on Sep 24): WARP device enrollment is blocked by a browser-side `ERR_QUIC_PROTOCOL_ERROR` on the final authorize redirect, sshd cert trust is not configured, the temporary workstation to bastion port 22 rule is not recorded as removed, and the SSH cutover has not happened.
 **Objective:** A single, identity-verified SSH entry point for every internal node, replacing static SSH keys with short-lived certificates and requiring two independent MFA layers.
 
 ---
@@ -24,7 +24,7 @@ Admin workstation
 Cloudflare Zero Trust (Access + WARP Connector, outbound-only from bastion)
     │
     ▼
-SSH Bastion (10.0.51.10, VLAN51) — runs the WARP Connector itself
+SSH Bastion (10.0.51.x, VLAN51) — runs the WARP Connector itself
     │  short-lived SSH cert, issued by step-ca via its own OIDC login
     │  against Authentik (MFA layer 2)
     ▼
@@ -35,8 +35,8 @@ Auth requires **two separate MFA layers**, not one MFA prompt reused twice: WARP
 
 ## What's already built
 
-1. **VLAN51 (DMZBastion) created** — isolates the bastion from the rest of [[VLAN50]] DMZ. Added to switch trunk ports 2 (pve-services) and 5 (OPNSense LAN). OPNSense interface `vlan09`, parent `re0`, tag 51, static gateway 10.0.51.1/24. Deliberately fully static for now — DHCP deferred to a future project.
-2. **Firewall rules scoped to a `bastion` host alias (10.0.51.10):**
+1. **VLAN51 (DMZBastion) created** — isolates the bastion from the rest of [[VLAN50]] DMZ. Added to switch trunk ports 2 (pve-services) and 5 (OPNSense LAN). OPNSense interface `vlan09`, parent `re0`, tag 51, static gateway 10.0.51.x/24. Deliberately fully static for now — DHCP deferred to a future project.
+2. **Firewall rules scoped to a `bastion` host alias (10.0.51.x):**
    - DNS to the OPNSense resolver
    - WARP tunnel to Cloudflare via `cf_warp_ingress`/`cf_warp_ports` aliases
    - WARP client API and DoH via `cf_warp_api`/`cf_warp_doh` aliases
@@ -51,12 +51,14 @@ Auth requires **two separate MFA layers**, not one MFA prompt reused twice: WARP
 
 - **Next step (from the Sep 21 session):** test the exact failing `/application/o/authorize/` URL with `curl`, which does not use QUIC, to confirm whether the failure is QUIC-specific.
 - **Configure sshd** on the bastion to trust step-ca's SSH user CA (`TrustedUserCAKeys`). Not started.
-- **Remove the temporary bootstrap rule** (`workstation` to `bastion`, port 22 on DMZBastion) once enrollment works.
-- **The bastion LXC (2202) is now built** — VLAN51 and its firewall rules exist, and the host at 10.0.51.10 is up. The remaining pieces below are not done (state as of the Sep 21 session).
+- **Remove the temporary bootstrap rule** (`workstation` to `bastion`, port 22 on DMZBastion) once enrollment works. Since Oct 3, 2026 the bastion's own host firewall drops port 22 on `eth0` anyway ([[bastion-host-firewall]]), but the OPNsense rule should still be removed.
+- **The bastion LXC (2202) is now built** — VLAN51 and its firewall rules exist, and the host at 10.0.51.x is up. The remaining pieces below are not done (state as of the Sep 21 session).
 - **WireGuard fallback vs the SSH cutover:** once the bastion IP is the only permitted SSH source to internal VLANs, SSH from a WireGuard peer would also be blocked unless carved out. Raised Sep 23. It is not yet decided what the WireGuard path should be able to reach.
 - **apt package update rule** — leaning toward a Debian repo host alias, not yet finalized.
 - **Bastion NTP source** — undecided whether it syncs against OPNSense's internal NTP server or reaches the internet directly.
 - **Once the bastion is live:** direct workstation-to-internal SSH will be blocked, and the bastion IP becomes the sole permitted SSH source to internal VLANs. That's a hard cutover step worth its own checklist when the time comes.
+- **Oct 3, 2026 (later) status:** sshd on the bastion trusts the step-ca SSH user CA and password login is off, tested over the Mesh ([[bastion-ssh-certificate-login]]). The temporary OPNsense rule was reported deleted by Daniel later that day. Still open from this list: the MFA gap (the step-ca login reuses the Authentik session), and the SSH cutover. The earlier line below is superseded for sshd trust and the Mesh access policies.
+- **Oct 3, 2026 status:** WARP stays connected, the bastion has a host firewall ([[bastion-host-firewall]]), and the workstation reaches it over the Mesh with ping and SSH ([[cloudflare-warp-windows-workstation-mesh-access]]). Still open: sshd `TrustedUserCAKeys`, the Mesh access policies, removing the temporary OPNsense rule, and the SSH cutover.
 
 ## Related Documentation
 

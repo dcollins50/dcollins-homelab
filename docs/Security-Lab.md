@@ -30,7 +30,7 @@ Agent deployed on Kali only. Gives a bidirectional view: attack traffic visible 
 | Wazuh agent on Jetson | Deferred — straightforward Debian-based install, not yet in scope |
 
 ## External redirector
-[[vps-redirector]] is a public-facing the provider VPS that fronts the lab for engagements: targets hit the VPS's public IP, which relays back to [[kali-attack]] on [[VLAN40]], keeping the home IP hidden and containing a burned VPS. The relay currently runs over Bore (cleartext, terminates on Kali); the intended replacement is a WireGuard tunnel terminating on [[opnsense]], scoped so the tunnel can reach only Kali's forwarded ports. Offensive methodology lives in the pentest-notes repo; the box as infrastructure and its hardening live in [[vps-redirector]] and [[sop-harden-debian-vps]].
+[[racknerd-vps]] is a public-facing RackNerd VPS that fronts the lab for engagements: targets hit the VPS's public IP, which relays back to [[kali-attack]] on [[VLAN40]], keeping the home IP hidden and containing a burned VPS. The relay currently runs over Bore (cleartext, terminates on Kali); the intended replacement is a WireGuard tunnel terminating on [[opnsense]], scoped so the tunnel can reach only Kali's forwarded ports. Offensive methodology lives in the pentest-notes repo; the box as infrastructure and its hardening live in [[racknerd-vps]] and [[sop-harden-debian-vps]].
 
 ## Related
 - [[Infrastructure]]

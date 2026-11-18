@@ -19,14 +19,14 @@ WSL has its own Linux home directory (`/home/<wsl-user>`), completely separate f
 
 2. **If empty, check the Windows profile for an existing key** (adjust the username):
    ```bash
-   ls -la /mnt/c/Users/<username>/.ssh
+   ls -la /mnt/c/Users/[user]/.ssh
    ```
 
 3. **Copy it into WSL's own `~/.ssh`** rather than referencing the `/mnt/c/` path directly every time (cleaner for anything else in WSL that expects a normal `~/.ssh`):
    ```bash
    mkdir -p ~/.ssh
-   cp /mnt/c/Users/<username>/.ssh/id_ed25519 ~/.ssh/
-   cp /mnt/c/Users/<username>/.ssh/id_ed25519.pub ~/.ssh/
+   cp /mnt/c/Users/[user]/.ssh/id_ed25519 ~/.ssh/
+   cp /mnt/c/Users/[user]/.ssh/id_ed25519.pub ~/.ssh/
    chmod 700 ~/.ssh
    chmod 600 ~/.ssh/id_ed25519
    chmod 644 ~/.ssh/id_ed25519.pub

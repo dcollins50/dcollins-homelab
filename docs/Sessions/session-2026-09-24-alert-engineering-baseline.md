@@ -46,7 +46,7 @@ Start of alert engineering work on the Wazuh stack ([[SOC-Stack]]). Goal: cut da
 - Decision pending: keep blanket /etc/pve suppression (current, matches April) or narrow it to the 8 volatile paths so authkey, lxc and qemu-server config changes stay visible. A narrow regex rule is drafted but untested.
 - Confirm rule 100004 on pve-env1, pve-env2, pve-gateway after their next scan.
 - Rules 5718, 5503, 5557: three denied-user SSH attempts and PAM/password failures on pve-env1. Source IP and user not checked.
-- Rule 19011 (CIS sshd GSSAPIAuthentication) on admin-Standard-PC-Q35-ICH9-2009: 13 alerts in a 42 minute window starting 13:00 UTC today, new agent. Still on the default hostname.
+- Rule 19011 (CIS sshd GSSAPIAuthentication) on [admin-user]-Standard-PC-Q35-ICH9-2009: 13 alerts in a 42 minute window starting 13:00 UTC today, new agent. Still on the default hostname.
 - wazuh-analysisd warns that `if_sid` cannot be overwritten for rules 23502, 23508 and 19010. Not confirmed whether pre-existing.
 - Tiering design (instant ntfy, daily digest, log only) not built yet.
 - Standardize node clocks to UTC, or document each node's offset somewhere, so this stops being a manual conversion every fix.

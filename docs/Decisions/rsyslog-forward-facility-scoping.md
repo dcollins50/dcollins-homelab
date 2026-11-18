@@ -4,19 +4,19 @@ type: decision
 status: live
 ---
 
-Scoped down the `*.* @10.0.10.10:5144` rsyslog forwarder on pve-env1, pve-services, and pve-env2, which was shipping every facility at every priority to [[soc-stack-vm]] over UDP with no filtering.
+Scoped down the `*.* @10.0.10.x:5144` rsyslog forwarder on pve-env1, pve-services, and pve-env2, which was shipping every facility at every priority to [[soc-stack-vm]] over UDP with no filtering.
 
 ## Decision
 Changed line 70 of `/etc/rsyslog.conf` on all three hosts from:
 
 ```
-*.* @10.0.10.10:5144
+*.* @10.0.10.x:5144
 ```
 
 to:
 
 ```
-*.*;kern.none;daemon.none    @10.0.10.10:5144
+*.*;kern.none;daemon.none    @10.0.10.x:5144
 ```
 
 Keeps auth, authpriv, cron, mail, user, and local0-7 facilities flowing to the `proxmox-logs` index. Drops `kern` and `daemon` entirely from this forward.
@@ -35,7 +35,7 @@ Trade-off accepted: this also drops legitimate kernel warnings (disk errors, OOM
 
 ## What was ruled out
 - Treating this as an SSH-specific issue and looking for a PAM/SSH-side cause. The `*.*` line explains the observed behavior fully; there is no separate SSH-triggered mechanism.
-- pve-gateway was checked and excluded from this fix: its line 70 uses `@@10.0.10.10:5144` (double `@`, TCP), not the single-`@` UDP form the other three hosts use. Different transport, not part of this problem. Left as-is; the TCP vs UDP inconsistency across nodes is a separate open item, not yet resolved.
+- pve-gateway was checked and excluded from this fix: its line 70 uses `@@10.0.10.x:5144` (double `@`, TCP), not the single-`@` UDP form the other three hosts use. Different transport, not part of this problem. Left as-is; the TCP vs UDP inconsistency across nodes is a separate open item, not yet resolved.
 
 ## Verification
 Applied via a small script looping `ssh -t` to each host (backup config, `sed` the line, validate with `rsyslogd -N1` before restarting, restart, confirm `active`). Confirmed the updated line on pve-env1, pve-services, and pve-env2 via grep, and confirmed `rsyslog.service` reported `active` on all three after restart.

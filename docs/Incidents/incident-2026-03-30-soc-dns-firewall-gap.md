@@ -14,39 +14,39 @@ March 30, 2026  |  SOC DNS Resolution & Firewall Audit Gap
 | **Date** | March 30, 2026 |
 | --- | --- |
 | **Author** | Daniel Collins |
-| **Affected Systems** | soc-stack (10.0.10.10), OPNSense, Heimdall RPi5 |
+| **Affected Systems** | soc-stack (10.0.10.x), OPNSense, Heimdall RPi5 |
 | **Severity** | Low — no data loss, no security breach; operational gaps only |
 | **Status** | Resolved |
 
 # **Background**
 
-During a routine SOC infrastructure session, the objective was to resolve three known pending items: fix soc-stack DNS (change resolver from 192.168.100.1 to 10.0.10.1), correct a stale static route on Heimdall, and begin Wazuh Manager deployment. While addressing the DNS change, two previously undetected firewall gaps were discovered and remediated.
+During a routine SOC infrastructure session, the objective was to resolve three known pending items: fix soc-stack DNS (change resolver from 192.168.100.x to 10.0.10.x), correct a stale static route on Heimdall, and begin Wazuh Manager deployment. While addressing the DNS change, two previously undetected firewall gaps were discovered and remediated.
 
 # **Session Timeline**
 
 ## **Issue 1 — soc-stack DNS Resolution Failure**
 
-soc-stack was configured to use Pi-hole (192.168.100.1) as its DNS resolver. This address is on the WAN-side network, which OPNSense blocks by default from internal VLANs. DNS queries from soc-stack were being dropped, generating consistent firewall block log entries.
+soc-stack was configured to use Pi-hole (192.168.100.x) as its DNS resolver. This address is on the WAN-side network, which OPNSense blocks by default from internal VLANs. DNS queries from soc-stack were being dropped, generating consistent firewall block log entries.
 
-The intended fix was to point soc-stack at 10.0.10.1 (the OPNSense SOC VLAN gateway), where Unbound DNS was already running. However, testing revealed that DNS queries to 10.0.10.1 also timed out. Root cause: no firewall rule existed on the SOC interface permitting DNS traffic destined for the firewall itself.
+The intended fix was to point soc-stack at 10.0.10.x (the OPNSense SOC VLAN gateway), where Unbound DNS was already running. However, testing revealed that DNS queries to 10.0.10.x also timed out. Root cause: no firewall rule existed on the SOC interface permitting DNS traffic destined for the firewall itself.
 
 - Resolution: Added OPNSense firewall rule — SOC net → This Firewall → TCP/UDP port 53
 
-- Resolution: Added Unbound Query Forwarding rule — homelab.local → 192.168.100.1 (Pi-hole)
+- Resolution: Added Unbound Query Forwarding rule — homelab.local → 192.168.100.x (Pi-hole)
 
-- Resolution: Updated soc-stack /etc/netplan config, changed nameserver from 192.168.100.1 to 10.0.10.1
+- Resolution: Updated soc-stack /etc/netplan config, changed nameserver from 192.168.100.x to 10.0.10.x
 
-- Verified: dig @10.0.10.1 google.com resolves correctly from soc-stack
+- Verified: dig @10.0.10.x google.com resolves correctly from soc-stack
 
 ## **Issue 2 — SSH to Heimdall Blocked from Workstation**
 
-While preparing to SSH into Heimdall to address the stale static route, SSH connections timed out from the workstation on both 192.168.100.1 (rack-side) and 192.168.1.2 (home network-side). Heimdall was fully operational — Pi-hole web UI was accessible, ping responded, and sshd was active and listening on all interfaces.
+While preparing to SSH into Heimdall to address the stale static route, SSH connections timed out from the workstation on both 192.168.100.x (rack-side) and 192.168.1.x (home network-side). Heimdall was fully operational — Pi-hole web UI was accessible, ping responded, and sshd was active and listening on all interfaces.
 
-Root cause: The LAN firewall ruleset contained explicit rules for DNS and ICMP to 192.168.100.1, but no rule permitting SSH. This gap was introduced during a prior firewall hardening session where overly permissive rules were replaced with scoped explicit rules. SSH to Heimdall was never validated after that hardening work and had been silently broken since.
+Root cause: The LAN firewall ruleset contained explicit rules for DNS and ICMP to 192.168.100.x, but no rule permitting SSH. This gap was introduced during a prior firewall hardening session where overly permissive rules were replaced with scoped explicit rules. SSH to Heimdall was never validated after that hardening work and had been silently broken since.
 
-Tailscale (<tailscale-ip>) was used as an out-of-band access path to diagnose and resolve the issue without requiring physical access to the RPi5.
+Tailscale (100.x.x.x) was used as an out-of-band access path to diagnose and resolve the issue without requiring physical access to the RPi5.
 
-- Resolution: Added OPNSense LAN firewall rule — LAN net → 192.168.100.1 → TCP port 22
+- Resolution: Added OPNSense LAN firewall rule — LAN net → 192.168.100.x → TCP port 22
 
 - Verified: SSH from workstation to Heimdall successful
 
@@ -68,11 +68,11 @@ Every firewall hardening session should conclude with a structured test of every
 
 ## **DNS Validation at VLAN Build Time**
 
-When the SOC VLAN was stood up, DNS resolution from soc-stack should have been verified against the intended resolver (10.0.10.1) before moving on. The issue was present from day one but was masked by the fallback behavior of querying 192.168.100.1 directly, which generated block logs rather than a hard failure.
+When the SOC VLAN was stood up, DNS resolution from soc-stack should have been verified against the intended resolver (10.0.10.x) before moving on. The issue was present from day one but was masked by the fallback behavior of querying 192.168.100.x directly, which generated block logs rather than a hard failure.
 
 ## **Known Pending Items Left Open Too Long**
 
-The soc-stack DNS issue was identified and documented on March 28 but not resolved until March 30. The stale Heimdall route (10.99.0.0/24 via 192.168.100.2) has been open since early March. Pending items should be prioritized and closed in order rather than carried forward indefinitely.
+The soc-stack DNS issue was identified and documented on March 28 but not resolved until March 30. The stale Heimdall route (10.99.0.0/24 via 192.168.100.x) has been open since early March. Pending items should be prioritized and closed in order rather than carried forward indefinitely.
 
 ## **Post-Hardening Verification Checklist**
 
@@ -102,7 +102,7 @@ The firewall audit in February did not include a test phase. Future hardening se
 
 | **Item** | **Notes** | **Status** |
 | --- | --- | --- |
-| Fix stale Heimdall route — 10.99.0.0/24 via 192.168.100.2 → via 192.168.100.250 | NM connection file on Heimdall, route2 field | **Closed** |
+| Fix stale Heimdall route — 10.99.0.0/24 via 192.168.100.x → via 192.168.100.x | NM connection file on Heimdall, route2 field | **Closed** |
 | Deploy Wazuh Manager-only on pve-SOC | 4GB VM, feeds existing Elasticsearch | **Closed** |
 | Disable root password SSH on Proxmox nodes (key-only) | Part of general hardening session | **Open** |
 | Suricata tuning and IPS mode | After hardening session | **Partial** |

@@ -49,8 +49,8 @@ The Intermediate CA cert lives on VM 501 at `~/homelab-ca/intermediate-ca/certs/
 On the workstation:
 
 ```bash
-scp admin@<pve-ca-intermediate-ip>:~/homelab-ca/intermediate-ca/certs/intermediate-ca.crt .
-scp intermediate-ca.crt admin@<soc-stack-ip>:/tmp/homelab-intermediate-ca.crt
+scp [admin-user]@<pve-ca-intermediate-ip>:~/homelab-ca/intermediate-ca/certs/intermediate-ca.crt .
+scp intermediate-ca.crt [admin-user]@<soc-stack-ip>:/tmp/homelab-intermediate-ca.crt
 ```
 
 On soc-stack:

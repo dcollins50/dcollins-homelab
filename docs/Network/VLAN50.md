@@ -11,8 +11,10 @@ role: DMZ1
 ## Hosts
 | Host | IP |
 |------|----|
-| [[npm-dmz]] | 10.0.50.69 |
-| [[ntfy]] | 10.0.50.69 (Docker container inside [[npm-dmz]]) |
-| [[pve-authtunnel]] | 10.0.50.70 |
+| [[npm-dmz]] | 10.0.50.x |
+| [[ntfy]] | 10.0.50.x (Docker container inside [[npm-dmz]]) |
+| [[pve-authtunnel]] | 10.0.50.x |
+| [[dev-git]] | 10.0.50.x |
+| [[nimbus]] | 10.0.50.x |
 | Self-Hosted Website | planned |
 | Stoat Messenger | planned |

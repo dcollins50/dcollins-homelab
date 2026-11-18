@@ -6,13 +6,13 @@ status: live
 role: DMZ2 / SSH Bastion
 ---
 
-Created Sep 21, 2026 (named DMZBastion) to isolate the bastion from the rest of [[VLAN50]]. Added to switch trunk ports 2 (pve-services) and 5 (OPNSense LAN). OPNSense interface: vlan09, parent re0, tag 51, static gateway 10.0.51.1/24. Deliberately fully static for now — DHCP deferred to a future project.
+Created Sep 21, 2026 (named DMZBastion) to isolate the bastion from the rest of [[VLAN50]]. Added to switch trunk ports 2 (pve-services) and 5 (OPNSense LAN). OPNSense interface: vlan09, parent re0, tag 51, static gateway 10.0.51.x/24. Deliberately fully static for now — DHCP deferred to a future project.
 
 **Status (Sep 24, 2026):** [[pve-bastion]] (LXC 2202) is built. As left in the Sep 21 session, WARP enrollment is blocked by a QUIC error on the authorize redirect, sshd cert trust is not configured, and no SSH cutover has happened, so the policy below is still the plan. The temporary `workstation` to `bastion` port 22 rule is not recorded as removed.
 
 **Firewall policy:** designed as the single SSH entry point for all internal nodes. Once live, the bastion IP will be the only permitted SSH source to internal VLANs; direct workstation-to-internal SSH will be blocked at that point.
 
-Bastion host alias (10.0.51.10) rules already scoped: DNS to OPNSense resolver, WARP tunnel to Cloudflare (cf_warp_ingress/cf_warp_ports), WARP client API/DoH (cf_warp_api/cf_warp_doh), Authentik OIDC via internal_npm, step-ca via pve_int_stepca. Still open: apt package update rule (leaning Debian repo host alias), and whether bastion NTP syncs against OPNSense's internal NTP vs. the internet.
+Bastion host alias (10.0.51.x) rules already scoped: DNS to OPNSense resolver, WARP tunnel to Cloudflare (cf_warp_ingress/cf_warp_ports), WARP client API/DoH (cf_warp_api/cf_warp_doh), Authentik OIDC via internal_npm, step-ca via pve_int_stepca. apt: since Oct 17, 2026, rule `bastion` to `debian_repos` (Fastly IPv4 ranges, 21 entries) TCP 443, logged; `apt update` and `apt upgrade` tested working ([[session-2026-10-17-stepca-remote-tunnel]]). NTP: closed Oct 17, 2026. The bastion is an LXC and uses [[pve-services]]' kernel clock (`timedatectl` in 2202: `NTP service: inactive`, `System clock synchronized: yes`). pve-services syncs with chrony against public NTP servers. No NTP rule is needed to keep the bastion's clock right. The Sep 21 rule to `10.0.51.x` port 123 is left in place: the WARP client logged NTP lines on Oct 2 ([[session-2026-10-03-bastion-warp-ipv6]]), so whether anything on the bastion still uses that rule is not checked.
 
 Auth design: two MFA layers — WARP client enrollment via [[authentik]] as IdP, plus [[pve-int-stepca]] issuing short-lived SSH certs via its own OIDC login against Authentik, replacing a static SSH key. Will run the Cloudflare WARP Connector itself (outbound-only tunnel), not a separate connector host.
 
@@ -21,7 +21,7 @@ The bastion will have no route to [[Tailscale]] (break-glass), and the tailnet r
 ## Hosts
 | Host | IP |
 |------|----|
-| [[pve-bastion]] | 10.0.51.10 |
+| [[pve-bastion]] | 10.0.51.x |
 
 ## SOPs
 - [[sop-ssh-bastion-build|SSH Bastion Build]]

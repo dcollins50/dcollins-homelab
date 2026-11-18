@@ -144,7 +144,7 @@ Record every disposition in your triage log. The format does not need to be elab
 
 Level: 5 | Count: 3 in 24h
 
-Context: Failures from 10.0.0.199 (my workstation) at 08:14.
+Context: Failures from 10.0.0.x (my workstation) at 08:14.
 
          Likely mistyped password during morning login.
 

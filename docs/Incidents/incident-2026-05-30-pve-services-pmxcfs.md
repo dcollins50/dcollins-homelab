@@ -8,7 +8,7 @@ status: open
 # Incident: pve-services Lost Quorum (pmxcfs Database I/O Error, Corosync Exit 21)
 
 **Date:** 2026-05-30 (first fault) / 2026-06-02 (corosync exit) / ~2026-06-05 (found)
-**Systems affected:** pve-services (10.0.0.11), pmxcfs (pve-cluster), corosync
+**Systems affected:** pve-services (10.0.0.x), pmxcfs (pve-cluster), corosync
 **Status:** Diagnosed. Resolution not documented.
 
 ## Summary
@@ -50,7 +50,7 @@ The chat that diagnosed this ended while checking `/var/lib/pve-cluster/` on the
 ## Open items
 
 - Document how pve-services was actually recovered, or confirm whether it is still affected.
-- Find the source of the disk I/O error. The disk and filesystem under `/var/lib/pve-cluster` have not been checked.
+- Find the source of the disk I/O error. The disk and filesystem under `/var/lib/pve-cluster` have not been checked. **Update Oct 17, 2026:** very likely the same failure as [[incident-2026-10-15-pve-services-nvme-dropout]]. Power-on hours show it is the same Samsung 990 PRO, and that incident points to the drive dropping off the bus in a low-power state. APST disabled Oct 17, 2026.
 - Clean up the corrupted journal files on pve-services.
 - Quorum loss went unnoticed for 2+ days. There is no alert on node quorum state.
 

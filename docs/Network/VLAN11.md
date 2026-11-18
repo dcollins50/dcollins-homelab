@@ -8,12 +8,12 @@ role: AIops
 
 Decided Sep 23, 2026. Dedicated segment for the local AI inference host and future AIops workloads. The subnet was chosen by Daniel. VLAN ID 11 follows the existing convention (the subnet's third octet matches the VLAN ID on [[VLAN10]], [[VLAN20]], [[VLAN30]], [[VLAN50]] and [[VLAN51]]) and was confirmed by Daniel on Sep 23. See [[aiops-vlan]] for the decision.
 
-Not built yet. Build with [[opnsense-isolated-vlan|Build a New Isolated VLAN Segment]]. Gateway 10.0.11.1. Built with DHCP from the start (Kea, reservations only) as the pilot for [[dhcp-dns-rollout]]. Decided Sep 23.
+Not built yet. Build with [[opnsense-isolated-vlan|Build a New Isolated VLAN Segment]]. Gateway 10.0.11.x. Built with DHCP from the start (Kea, reservations only) as the pilot for [[dhcp-dns-rollout]]. Decided Sep 23.
 
 ## Planned hosts
 | Host | IP |
 |------|----|
-| [[jetson-orin-nano]] | 10.0.11.10 (currently 10.99.0.100 on [[VLAN40]]) |
+| [[jetson-orin-nano]] | 10.0.11.x (currently 10.99.0.x on [[VLAN40]]) |
 
 ## Proposed firewall rules (not agreed or built)
 Scoped to the jetson's host alias, default deny otherwise:

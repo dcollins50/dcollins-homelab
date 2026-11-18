@@ -18,8 +18,8 @@ Before touching either VM, two new aliases and their matching access rules were 
 
 | Name | Type | Content | Description |
 |---|---|---|---|
-| `pve_ca_root` | Host(s) | 10.0.30.21 | Root CA host |
-| `pve_ca_intermediate` | Host(s) | 10.0.30.22 | Intermediate CA host |
+| `pve_ca_root` | Host(s) | 10.0.30.x | Root CA host |
+| `pve_ca_intermediate` | Host(s) | 10.0.30.x | Intermediate CA host |
 
 **Firewall rules** (LAN interface tab, matching the existing `pve-iris`/`soar-host` pattern rather than relying on the pre-existing blanket `Allow LAN to DEV` rule):
 
@@ -46,8 +46,8 @@ Repeated for both:
 
 | Host | Old address | New address |
 |---|---|---|
-| pve-ca-root | 10.0.0.20 (assumed, never explicitly confirmed pre-migration) | 10.0.30.21 |
-| pve-ca-intermediate | 10.0.0.21 (confirmed) | 10.0.30.22 |
+| pve-ca-root | 10.0.0.x (assumed, never explicitly confirmed pre-migration) | 10.0.30.x |
+| pve-ca-intermediate | 10.0.0.x (confirmed) | 10.0.30.x |
 
 Both came up correctly on the new VLAN and address on the first boot after the tag change, no rollback or troubleshooting needed.
 
@@ -55,8 +55,8 @@ Both came up correctly on the new VLAN and address on the first boot after the t
 
 ## Verification
 
-- **SSH connectivity confirmed** to both new addresses (10.0.30.21, 10.0.30.22).
-- **Old addresses confirmed unreachable** (10.0.0.20, 10.0.0.21 both stopped responding post-migration).
+- **SSH connectivity confirmed** to both new addresses (10.0.30.x, 10.0.30.x).
+- **Old addresses confirmed unreachable** (10.0.0.x, 10.0.0.x both stopped responding post-migration).
 - **No Wazuh agent reconnection to check**, neither VM runs its own Wazuh agent, monitoring visibility for both comes from pve-services' host-level agent, which never moved and was unaffected.
 - **No hardcoded IP references elsewhere in the environment.** Certificate issuance on both CAs has always been manual `openssl` commands run locally on the CA host itself, nothing external (scripts, cron jobs, other configs) referenced either CA's old flat-network address, so there was nothing left dangling to find and fix.
 
@@ -68,7 +68,7 @@ Both CAs are now actually on VLAN30 (Trust Infrastructure), not just documented 
 
 ## Open items carried forward
 
-- Root CA's actual pre-migration address (10.0.0.20) was never independently confirmed, it was inferred from Intermediate CA's known address (10.0.0.21) and is now moot since the migration is complete, but worth noting for the record that it was an assumption, not a verified fact, at the time.
+- Root CA's actual pre-migration address (10.0.0.x) was never independently confirmed, it was inferred from Intermediate CA's known address (10.0.0.x) and is now moot since the migration is complete, but worth noting for the record that it was an assumption, not a verified fact, at the time.
 - The blanket `Allow LAN to DEV` rule on VLAN30 is still broader than the scoped, per-host pattern used elsewhere (VLAN10's pve-iris/soar-host rules). The two new CA-specific SSH rules added this session are redundant with that blanket rule for now. Narrowing or removing the blanket rule remains a separate, not-yet-scheduled hardening task.
 
 ---

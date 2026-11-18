@@ -24,7 +24,7 @@ Four HP EliteDesk mini PCs, Corosync quorum across all four. **Version:** PVE 9.
 ## Cluster networking
 All Proxmox nodes use a single Linux bridge (`vmbr0`) with VLAN-aware mode enabled; VM interfaces get VLAN tags at the bridge level. OPNSense trunks all VLANs back to the switch.
 
-All nodes resolve DNS via Pi-hole at 192.168.100.1. soc-stack's DNS was updated via netplan to point to 10.0.10.1 for VLAN10 resolution. OPNSense Unbound forwards `homelab.local` queries to the internal DNS server.
+All nodes resolve DNS via Pi-hole at 192.168.100.x. soc-stack's DNS was updated via netplan to point to 10.0.10.x for VLAN10 resolution. OPNSense Unbound forwards `homelab.local` queries to the internal DNS server.
 
 > [!warning] Change pending
 > This describes the current DNS state. [[dns-architecture]] (Sep 23, 2026) decided that Unbound on OPNsense becomes the resolver for the stack, Pi-hole stays for domain blocking only, and internal names move from `homelab.local` to `.internal`. Not started, tracked in [[dhcp-dns-rollout]].

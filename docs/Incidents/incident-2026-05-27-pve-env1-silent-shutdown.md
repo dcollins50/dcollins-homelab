@@ -8,7 +8,7 @@ status: open
 # Incident: pve-env1 Silent Power-Off, Quorum Loss and NPM Outage
 
 **Date:** 2026-05-27 to 2026-05-28
-**Systems affected:** pve-env1 (HP EliteDesk 800 G5 Mini, 10.0.0.12), Nginx Proxy Manager, internal domain routing, cluster quorum
+**Systems affected:** pve-env1 (HP EliteDesk 800 G5 Mini, 10.0.0.x), Nginx Proxy Manager, internal domain routing, cluster quorum
 **Status:** Recovered. Root cause not confirmed.
 
 ## Summary

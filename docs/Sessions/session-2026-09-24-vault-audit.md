@@ -15,11 +15,11 @@ date: 2026-09-24
 
 ## Confirmed by Daniel
 - npm-dmz is LXC 2200 on [[pve-env1]] running Docker. [[ntfy]] is a container inside it, not a separate VM.
-- [[ubuntu-401]] is on 10.0.30.40/24 (stated as "I believe", not verified on the host).
+- [[ubuntu-401]] is on 10.0.30.x/24 (stated as "I believe", not verified on the host).
 - Network+ is done, so the Active Directory lab is no longer blocked on it. It has not been started.
 
 ## Fixed
-- [[ubuntu-401]]: `ip` was `VLAN30`, now 10.0.30.40. Added to the [[VLAN30]] host table.
+- [[ubuntu-401]]: `ip` was `VLAN30`, now 10.0.30.x. Added to the [[VLAN30]] host table.
 - [[npm-dmz]]: `type`, `vmid` and `node` corrected to lxc, 2200, pve-env1. Body said "not Docker", corrected.
 - [[ntfy]]: IP and node corrected, body now says it is a container inside npm-dmz. [[VLAN50]] table updated.
 - [[pve-env1]] hosted list now includes npm-dmz and kalshi-mm. [[pve-services]] now lists [[pve-bastion]] and VLAN51.

@@ -15,7 +15,7 @@ Hosts detection/log analysis (ELK, Wazuh), alert automation (Shuffle SOAR), inci
 ## Hosts
 | Host | IP |
 |------|----|
-| [[soc-stack-vm]] (VM 600) | 10.0.10.10 |
-| [[wazuh-manager]] (VM 601) | 10.0.10.11 |
-| [[soar-host]] (VM 602) | 10.0.10.12 |
-| [[pve-iris]] (VM 604) | 10.0.10.13 |
+| [[soc-stack-vm]] (VM 600) | 10.0.10.x |
+| [[wazuh-manager]] (VM 601) | 10.0.10.x |
+| [[soar-host]] (VM 602) | 10.0.10.x |
+| [[pve-iris]] (VM 604) | 10.0.10.x |

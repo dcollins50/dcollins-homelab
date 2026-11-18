@@ -70,7 +70,7 @@ This phase is complete when Ansible is operational on VM 401 with SSH access to 
 | Wazuh active response | VM 601 | Detects alert conditions and triggers response scripts. Scripts call Ansible on VM 401. |
 | Forensic storage | VM 600 | /opt/forensics directory. Ansible playbooks SCP collected data here. |
 | Managed hosts | All agents | Targets for forensic collection. Ansible connects over SSH using the dedicated keypair. |
-| OPNSense | 10.0.0.1 | Target for IP block active response via OPNSense API. |
+| OPNSense | 10.0.0.x | Target for IP block active response via OPNSense API. |
 | Proxmox API | All nodes | Target for host isolation active response. Proxmox API disconnects VM network interface. |
 
 ## **2.2 Response Flow**
@@ -135,7 +135,7 @@ echo 'no-port-forwarding,no-X11-forwarding,no-agent-forwarding ssh-ed25519 <key>
 
 Alternatively, use ssh-copy-id from VM 401 to distribute the key interactively:
 
-ssh-copy-id -i ~/.ssh/ansible_id.pub admin@<target_host_ip>
+ssh-copy-id -i ~/.ssh/ansible_id.pub [admin-user]@<target_host_ip>
 
 | **NOTE** | The no-port-forwarding,no-X11-forwarding,no-agent-forwarding prefix restricts what the key can be used for if an attacker obtains it. It cannot be used to tunnel traffic or forward agents. For forensic collection this is appropriate since the playbooks only need to run commands and copy files. |
 | --- | --- |
@@ -150,31 +150,31 @@ Inventory contents:
 
 [soc]
 
-soc-stack        ansible_host=10.0.10.10
+soc-stack        ansible_host=10.0.10.x
 
-wazuh-manager    ansible_host=10.0.10.11
+wazuh-manager    ansible_host=10.0.10.x
 
 [vms]
 
-services-host    ansible_host=10.0.20.30
+services-host    ansible_host=10.0.20.x
 
-kalshi-mm        ansible_host=10.0.20.50
+kalshi-mm        ansible_host=10.0.20.x
 
-ubuntu           ansible_host=10.0.30.40
+ubuntu           ansible_host=10.0.30.x
 
 [proxmox_nodes]
 
-pve-gateway      ansible_host=10.0.0.10
+pve-gateway      ansible_host=10.0.0.x
 
-pve-services     ansible_host=10.0.0.11
+pve-services     ansible_host=10.0.0.x
 
-pve-env1         ansible_host=10.0.0.12
+pve-env1         ansible_host=10.0.0.x
 
-pve-SOC         ansible_host=10.0.0.13
+pve-SOC         ansible_host=10.0.0.x
 
 [all:vars]
 
-ansible_user=admin
+ansible_user=[admin-user]
 
 ansible_ssh_private_key_file=~/.ssh/ansible_id
 
@@ -192,13 +192,13 @@ On soc-stack (VM 600), create the forensic storage directory:
 
 sudo mkdir -p /opt/forensics
 
-sudo chown admin:admin /opt/forensics
+sudo chown [admin-user]:[admin-user] /opt/forensics
 
 sudo chmod 750 /opt/forensics
 
 Verify that VM 401 can write to this directory via SSH:
 
-ssh admin@10.0.10.10 'echo test > /opt/forensics/connectivity_test.txt && cat /opt/forensics/connectivity_test.txt'
+ssh [admin-user]@10.0.10.x 'echo test > /opt/forensics/connectivity_test.txt && cat /opt/forensics/connectivity_test.txt'
 
 # **5. Procedure: Forensic Collection Playbook**
 
@@ -230,7 +230,7 @@ Playbook contents:
 
     out_dir: "/tmp/forensics_{{ ts }}"
 
-    store: "admin@10.0.10.10:/opt/forensics/{{ case_id }}_{{ ts }}"
+    store: "[admin-user]@10.0.10.x:/opt/forensics/{{ case_id }}_{{ ts }}"
 
   tasks:
 
@@ -320,7 +320,7 @@ OPNSENSE_KEY=$(cat /etc/wazuh-opnsense/api.key)
 
 OPNSENSE_SECRET=$(cat /etc/wazuh-opnsense/api.secret)
 
-OPNSENSE_URL='https://10.0.0.1'
+OPNSENSE_URL='https://10.0.0.x'
 
 ALIAS='wazuh_blocked'
 
@@ -443,7 +443,7 @@ AGENT_IP=$1
 
 PVE_TOKEN=$(cat /etc/wazuh-proxmox/token)
 
-PVE_HOST='https://10.0.0.13:8006'
+PVE_HOST='https://10.0.0.x:8006'
 
 # Lookup VMID from IP using Proxmox API
 
@@ -490,7 +490,7 @@ AGENT_NAME=$1
 
 CASE_ID=$2
 
-ssh -i /etc/wazuh-ansible/id_ed25519 admin@10.0.30.40 \
+ssh -i /etc/wazuh-ansible/id_ed25519 [admin-user]@10.0.30.x \
 
   ansible-playbook /opt/ansible/playbooks/forensic_collect.yml \
 
@@ -537,13 +537,13 @@ sudo tail -f /var/ossec/logs/active-responses.log
 
 Test SSH connectivity from VM 401 to the target using the Ansible key:
 
-ssh -i ~/.ssh/ansible_id admin@<target_ip> 'whoami'
+ssh -i ~/.ssh/ansible_id [admin-user]@<target_ip> 'whoami'
 
 If this fails, the key was not distributed correctly. Re-run the distribution step for that host.
 
 ## **Forensic output not appearing on soc-stack**
 
-Verify the fetch task in the playbook is using the correct destination path and that the admin user on soc-stack has write permissions to /opt/forensics. Also check whether the staging directory on the target host was created successfully.
+Verify the fetch task in the playbook is using the correct destination path and that the [admin-user] user on soc-stack has write permissions to /opt/forensics. Also check whether the staging directory on the target host was created successfully.
 
 ## **OPNSense API returning 401**
 

@@ -26,42 +26,42 @@ The migration cleared the path for proper OPNSense deployment with correct netwo
 
 ### Network Topology
 ```
-Heimdall (Pi 5 @ 192.168.100.1) - WiFi bridge to home network
+Heimdall (Pi 5 @ 192.168.100.x) - WiFi bridge to home network
     ↓ patch panel
 Unmanaged Switch
     ↓
-├─ pve-gateway (192.168.100.2)
-├─ pve-services (192.168.100.3)
-├─ pve-env2 (192.168.100.4)
-├─ pve-env1 (192.168.100.7)
+├─ pve-gateway (192.168.100.x)
+├─ pve-services (192.168.100.x)
+├─ pve-env2 (192.168.100.x)
+├─ pve-env1 (192.168.100.x)
 └─ Workstation (DHCP 192.168.100.x)
 ```
 
 ### Infrastructure Inventory
 
 **Proxmox Hosts:**
-- pve-gateway: 192.168.100.2 (HP Mini - designated OPNSense hardware)
-- pve-services: 192.168.100.3 (HP Mini - Docker host)
-- pve-env2: 192.168.100.4 (HP Mini - development)
-- pve-env1: 192.168.100.7 (HP Mini - PKI/CA infrastructure)
+- pve-gateway: 192.168.100.x (HP Mini - designated OPNSense hardware)
+- pve-services: 192.168.100.x (HP Mini - Docker host)
+- pve-env2: 192.168.100.x (HP Mini - development)
+- pve-env1: 192.168.100.x (HP Mini - PKI/CA infrastructure)
 
 **Virtual Machines:**
-- VM 100 (pfsense): 192.168.100.5 - Old firewall VM, to be retired
-- VM 200 (services-host): 192.168.100.6 - Docker Host 1
-- VM 300 (Kali-attack): 10.99.0.10 - Security lab (isolated)
-- VM 301 (metasploitable2): 10.99.0.20 - Security lab (isolated)
-- VM 302 (DVWA): 10.99.0.30 - Security lab (isolated)
-- VM 400 (malware-win11): 10.98.0.10 - Malware analysis (air-gapped)
-- VM 401 (ubuntu): 192.168.100.77 - Development machine
-- VM 500 (pve-ca-root): 192.168.100.60 - Root CA
-- VM 501 (pve-ca-intermediate): 192.168.100.61 - Intermediate CA
-- VM 700 (VM 700): 192.168.100.66 - Docker Host 2
+- VM 100 (pfsense): 192.168.100.x - Old firewall VM, to be retired
+- VM 200 (services-host): 192.168.100.x - Docker Host 1
+- VM 300 (Kali-attack): 10.99.0.x - Security lab (isolated)
+- VM 301 (metasploitable2): 10.99.0.x - Security lab (isolated)
+- VM 302 (DVWA): 10.99.0.x - Security lab (isolated)
+- VM 400 (malware-win11): 10.98.0.x - Malware analysis (air-gapped)
+- VM 401 (ubuntu): 192.168.100.x - Development machine
+- VM 500 (pve-ca-root): 192.168.100.x - Root CA
+- VM 501 (pve-ca-intermediate): 192.168.100.x - Intermediate CA
+- VM 700 (VM 700): 192.168.100.x - Docker Host 2
 
 ### The Problem
 
 **Previous 3 days** were spent attempting to configure OPNSense with both WAN and LAN on 192.168.100.x subnet:
-- WAN: 192.168.100.250 or .254 (connecting to heimdall at .1)
-- LAN: 192.168.100.251 or .253 (connecting to Proxmox nodes at .2, .3, .4, .7)
+- WAN: 192.168.100.x or .254 (connecting to heimdall at .1)
+- LAN: 192.168.100.x or .253 (connecting to Proxmox nodes at .2, .3, .4, .7)
 
 **This violated fundamental routing principles:**
 1. **Routing table ambiguity** - Kernel doesn't know which interface owns the subnet
@@ -77,21 +77,21 @@ Unmanaged Switch
 ### New IP Scheme
 
 **Management Network (10.0.0.0/24):**
-- 10.0.0.1 - OPNSense LAN gateway (to be configured)
-- 10.0.0.10 - pve-gateway
-- 10.0.0.11 - pve-services
-- 10.0.0.12 - pve-env1
-- 10.0.0.13 - pve-env2
-- 10.0.0.20 - pve-ca-root (VM 500)
-- 10.0.0.21 - pve-ca-intermediate (VM 501)
-- 10.0.0.30 - services-host (VM 200)
-- 10.0.0.31 - VM 700 (Docker Host 2)
-- 10.0.0.40 - ubuntu (VM 401)
-- 10.0.0.100-254 - DHCP pool (future)
+- 10.0.0.x - OPNSense LAN gateway (to be configured)
+- 10.0.0.x - pve-gateway
+- 10.0.0.x - pve-services
+- 10.0.0.x - pve-env1
+- 10.0.0.x - pve-env2
+- 10.0.0.x - pve-ca-root (VM 500)
+- 10.0.0.x - pve-ca-intermediate (VM 501)
+- 10.0.0.x - services-host (VM 200)
+- 10.0.0.x - VM 700 (Docker Host 2)
+- 10.0.0.x - ubuntu (VM 401)
+- 10.0.0.x-254 - DHCP pool (future)
 
 **WAN Network (192.168.100.0/24):**
-- 192.168.100.1 - Heimdall (Pi 5)
-- 192.168.100.250 - OPNSense WAN (to be configured)
+- 192.168.100.x - Heimdall (Pi 5)
+- 192.168.100.x - OPNSense WAN (to be configured)
 
 **Security Lab Networks (VLANs - to be configured on OPNSense):**
 - 192.168.40.0/24 - VLAN 40 (Security Lab 1)
@@ -120,7 +120,7 @@ Unmanaged Switch
 
 **Result:**
 ```
-Heimdall (192.168.100.1)
+Heimdall (192.168.100.x)
     ↓
 Switch → All Proxmox nodes + Workstation
 ```
@@ -128,15 +128,15 @@ Switch → All Proxmox nodes + Workstation
 Network reverted to pre-OPNSense state, allowing direct access to all infrastructure.
 
 **Workstation Configuration:**
-- IP: 192.168.100.199/24
-- Gateway: 192.168.100.1
-- DNS: 192.168.100.1
+- IP: 192.168.100.x/24
+- Gateway: 192.168.100.x
+- DNS: 192.168.100.x
 
 **Verification:**
 ```bash
-ping 192.168.100.1  # heimdall
-ping 192.168.100.2  # pve-gateway
-ping 192.168.100.3  # pve-services
+ping 192.168.100.x  # heimdall
+ping 192.168.100.x  # pve-gateway
+ping 192.168.100.x  # pve-services
 ```
 
 ---
@@ -147,30 +147,30 @@ ping 192.168.100.3  # pve-services
 
 #### Step 1.1: Change Proxmox Host IP
 
-**Access:** https://192.168.100.7:8006
+**Access:** https://192.168.100.x:8006
 
 **Actions:**
 1. System → Network
 2. Edit vmbr0 interface
-3. Changed IPv4/CIDR: 192.168.100.7/24 → 10.0.0.12/24
-4. Changed Gateway: 192.168.100.1 → 10.0.0.1
+3. Changed IPv4/CIDR: 192.168.100.x/24 → 10.0.0.x/24
+4. Changed Gateway: 192.168.100.x → 10.0.0.x
 5. Applied Configuration
 6. **Lost connection (expected)**
 
 #### Step 1.2: Change Workstation IP
 
 **Windows Network Settings:**
-- IP: 10.0.0.199/24
+- IP: 10.0.0.x/24
 - Subnet: 255.255.255.0
-- Gateway: 10.0.0.1 (doesn't exist yet)
-- DNS: 192.168.100.1 (still on old subnet for now)
+- Gateway: 10.0.0.x (doesn't exist yet)
+- DNS: 192.168.100.x (still on old subnet for now)
 
 **Verification:**
 ```cmd
-ping 10.0.0.12  # ✓ Success
+ping 10.0.0.x  # ✓ Success
 ```
 
-**Access:** https://10.0.0.12:8006
+**Access:** https://10.0.0.x:8006
 
 #### Step 1.3: Discovered Quorum Loss
 
@@ -185,7 +185,7 @@ pvecm status
 # Only pve-env1 visible, other nodes offline
 ```
 
-**Root Cause:** pve-env1 at 10.0.0.12 could not communicate with other cluster members still at 192.168.100.x (different subnet, no routing).
+**Root Cause:** pve-env1 at 10.0.0.x could not communicate with other cluster members still at 192.168.100.x (different subnet, no routing).
 
 **Decision:** Rapid-fire migrate remaining nodes to restore quorum.
 
@@ -196,49 +196,49 @@ pvecm status
 #### Step 2.1: Migrate pve-env2
 
 **Workstation IP Change:**
-- Changed back to: 192.168.100.199/24 to access pve-env2
+- Changed back to: 192.168.100.x/24 to access pve-env2
 
-**Access:** https://192.168.100.4:8006
+**Access:** https://192.168.100.x:8006
 
 **Actions:**
 1. System → Network → vmbr0 → Edit
-2. Changed to: 10.0.0.13/24, gateway 10.0.0.1
+2. Changed to: 10.0.0.x/24, gateway 10.0.0.x
 3. Applied Configuration
 
 **Workstation IP Change:**
-- Changed to: 10.0.0.199/24
+- Changed to: 10.0.0.x/24
 
 **Verification:**
 ```cmd
-ping 10.0.0.13  # ✓ Success
+ping 10.0.0.x  # ✓ Success
 ```
 
 #### Step 2.2: Migrate pve-services
 
 **Workstation IP Change:**
-- Changed back to: 192.168.100.199/24
+- Changed back to: 192.168.100.x/24
 
-**Access:** https://192.168.100.3:8006
+**Access:** https://192.168.100.x:8006
 
 **Actions:**
 1. System → Network → vmbr0 → Edit
-2. Changed to: 10.0.0.11/24, gateway 10.0.0.1
+2. Changed to: 10.0.0.x/24, gateway 10.0.0.x
 3. Applied Configuration
 
 **Workstation IP Change:**
-- Changed to: 10.0.0.199/24
+- Changed to: 10.0.0.x/24
 
 **Verification:**
 ```cmd
-ping 10.0.0.11  # ✓ Success
+ping 10.0.0.x  # ✓ Success
 ```
 
 #### Step 2.3: Migrate pve-gateway
 
 **Workstation IP Change:**
-- Changed back to: 192.168.100.199/24
+- Changed back to: 192.168.100.x/24
 
-**Access:** https://192.168.100.2:8006
+**Access:** https://192.168.100.x:8006
 
 **Actions:**
 1. Powered off security lab VMs first:
@@ -247,15 +247,15 @@ ping 10.0.0.11  # ✓ Success
    - VM 302 (DVWA)
    - VM 400 (malware-win11)
 2. System → Network → vmbr0 → Edit
-3. Changed to: 10.0.0.10/24, gateway 10.0.0.1
+3. Changed to: 10.0.0.x/24, gateway 10.0.0.x
 4. Applied Configuration
 
 **Workstation IP Change:**
-- Changed to: 10.0.0.199/24
+- Changed to: 10.0.0.x/24
 
 **Verification:**
 ```cmd
-ping 10.0.0.10  # ✓ Success
+ping 10.0.0.x  # ✓ Success
 ```
 
 ---
@@ -283,7 +283,7 @@ Total votes:      1
 Membership information
 ----------------------
     Nodeid      Votes Name
-0x00000001          1 192.168.100.2 (local)
+0x00000001          1 192.168.100.x (local)
 ```
 
 **Root Cause:** Corosync cluster configuration still had old 192.168.100.x IPs.
@@ -292,7 +292,7 @@ Membership information
 
 **Accessed pve-env1:**
 ```bash
-ssh admin@10.0.0.12
+ssh admin@10.0.0.x
 sudo nano /etc/corosync/corosync.conf
 ```
 
@@ -303,25 +303,25 @@ nodelist {
     name: pve-gateway
     nodeid: 1
     quorum_votes: 1
-    ring0_addr: 192.168.100.2
+    ring0_addr: 192.168.100.x
   }
   node {
     name: pve-services
     nodeid: 2
     quorum_votes: 1
-    ring0_addr: 192.168.100.3
+    ring0_addr: 192.168.100.x
   }
   node {
     name: pve-env2
     nodeid: 3
     quorum_votes: 1
-    ring0_addr: 192.168.100.4
+    ring0_addr: 192.168.100.x
   }
   node {
     name: pve-env1
     nodeid: 4
     quorum_votes: 1
-    ring0_addr: 192.168.100.7
+    ring0_addr: 192.168.100.x
   }
 }
 ```
@@ -333,25 +333,25 @@ nodelist {
     name: pve-gateway
     nodeid: 1
     quorum_votes: 1
-    ring0_addr: 10.0.0.10
+    ring0_addr: 10.0.0.x
   }
   node {
     name: pve-services
     nodeid: 2
     quorum_votes: 1
-    ring0_addr: 10.0.0.11
+    ring0_addr: 10.0.0.x
   }
   node {
     name: pve-env2
     nodeid: 3
     quorum_votes: 1
-    ring0_addr: 10.0.0.13
+    ring0_addr: 10.0.0.x
   }
   node {
     name: pve-env1
     nodeid: 4
     quorum_votes: 1
-    ring0_addr: 10.0.0.12
+    ring0_addr: 10.0.0.x
   }
 }
 ```
@@ -364,7 +364,7 @@ nodelist {
 
 **On each node:**
 ```bash
-ssh admin@10.0.0.XX
+ssh user@example.com
 sudo nano /etc/corosync/corosync.conf
 # Made same changes
 sudo systemctl restart corosync
@@ -396,10 +396,10 @@ Total votes:      4
 Membership information
 ----------------------
     Nodeid      Votes Name
-0x00000001          1 10.0.0.10
-0x00000002          1 10.0.0.11
-0x00000003          1 10.0.0.13
-0x00000004          1 10.0.0.12 (local)
+0x00000001          1 10.0.0.x
+0x00000002          1 10.0.0.x
+0x00000003          1 10.0.0.x
+0x00000004          1 10.0.0.x (local)
 ```
 
 **✓ Success:** Cluster quorum restored!
@@ -428,8 +428,8 @@ With cluster healthy, proceeded to migrate VMs on each node.
 
 ##### VM 401 (ubuntu) - Development Machine
 
-**Current IP:** 192.168.100.77 (DHCP)  
-**New IP:** 10.0.0.40/24
+**Current IP:** 192.168.100.x (DHCP)  
+**New IP:** 10.0.0.x/24
 
 **Access:** pve-env1 WebUI → VM 401 → Console
 
@@ -454,23 +454,23 @@ network:
   ethernets:
     enp6s18:
       addresses:
-        - 10.0.0.40/24
+        - 10.0.0.x/24
       routes:
         - to: default
-          via: 10.0.0.1
+          via: 10.0.0.x
       nameservers:
         addresses:
-          - 192.168.100.1
+          - 192.168.100.x
 ```
 
 **Applied:**
 ```bash
 sudo netplan apply
 ip addr show enp6s18
-ping 10.0.0.12  # pve-env1 host
+ping 10.0.0.x  # pve-env1 host
 ```
 
-**Note:** Gateway 10.0.0.1 doesn't exist yet (will be OPNSense), but VM can reach local subnet.
+**Note:** Gateway 10.0.0.x doesn't exist yet (will be OPNSense), but VM can reach local subnet.
 
 **✓ Success**
 
@@ -478,12 +478,12 @@ ping 10.0.0.12  # pve-env1 host
 
 ##### VM 500 (pve-ca-root) - Root Certificate Authority
 
-**Current IP:** 192.168.100.60  
-**New IP:** 10.0.0.20/24
+**Current IP:** 192.168.100.x  
+**New IP:** 10.0.0.x/24
 
 **Access:** pve-env1 WebUI → VM 500 → Console
 
-**Discovery:** IP was already configured as 10.0.0.20, but gateway was wrong.
+**Discovery:** IP was already configured as 10.0.0.x, but gateway was wrong.
 
 **Actions:**
 ```bash
@@ -492,13 +492,13 @@ sudo nano /etc/netplan/50-cloud-init.yaml
 
 **Changed gateway:**
 ```yaml
-via: "192.168.100.1"  →  via: "10.0.0.1"
+via: "192.168.100.x"  →  via: "10.0.0.x"
 ```
 
 **Applied:**
 ```bash
 sudo netplan apply
-ping 10.0.0.12
+ping 10.0.0.x
 ```
 
 **✓ Success**
@@ -507,16 +507,16 @@ ping 10.0.0.12
 
 ##### VM 501 (pve-ca-intermediate) - Intermediate Certificate Authority
 
-**Current IP:** 192.168.100.61  
-**New IP:** 10.0.0.21/24
+**Current IP:** 192.168.100.x  
+**New IP:** 10.0.0.x/24
 
 **Access:** pve-env1 WebUI → VM 501 → Console
 
-**Configuration:** Already correct (10.0.0.21/24, gateway 10.0.0.12 temporary)
+**Configuration:** Already correct (10.0.0.x/24, gateway 10.0.0.x temporary)
 
 **Verification:**
 ```bash
-ping 10.0.0.12
+ping 10.0.0.x
 ```
 
 **✓ Success**
@@ -527,12 +527,12 @@ ping 10.0.0.12
 
 ##### VM 700 (Docker Host 2)
 
-**Current IP:** 192.168.100.66  
-**New IP:** 10.0.0.31/24
+**Current IP:** 192.168.100.x  
+**New IP:** 10.0.0.x/24
 
 **Access:** pve-env2 WebUI → VM 700 → Console
 
-**Configuration:** Already correct (10.0.0.31/24, gateway 10.0.0.13 temporary)
+**Configuration:** Already correct (10.0.0.x/24, gateway 10.0.0.x temporary)
 
 **Note:** `ping` not installed on this VM, but netplan config verified as correct.
 
@@ -547,11 +547,11 @@ ping 10.0.0.12
 **Error:** "Connection error 595: No route to host"
 
 **Diagnosis:**
-- Can ping 10.0.0.11 from workstation ✓
+- Can ping 10.0.0.x from workstation ✓
 - Cannot access WebUI ✗
-- Cannot SSH as admin@10.0.0.11 ✗
+- Cannot SSH as admin@10.0.0.x ✗
 
-**Root Cause:** Proxmox web console trying to connect to OLD IP (192.168.100.3) instead of new IP (10.0.0.11).
+**Root Cause:** Proxmox web console trying to connect to OLD IP (192.168.100.x) instead of new IP (10.0.0.x).
 
 **Attempted Fixes:**
 1. Updated /etc/hosts on all nodes
@@ -566,8 +566,8 @@ ping 10.0.0.12
 
 ##### VM 200 (services-host) - Docker Host 1
 
-**Current IP:** 192.168.100.6  
-**New IP:** 10.0.0.30/24
+**Current IP:** 192.168.100.x  
+**New IP:** 10.0.0.x/24
 
 **Access:** Physical console on pve-services
 
@@ -581,10 +581,10 @@ sudo nano /etc/hosts
 Changed to:
 ```
 127.0.0.1 localhost.localdomain localhost
-10.0.0.11 pve-services.local pve-services
-10.0.0.10 pve-gateway.local pve-gateway
-10.0.0.12 pve-env1.local pve-env1
-10.0.0.13 pve-env2.local pve-env2
+10.0.0.x pve-services.local pve-services
+10.0.0.x pve-gateway.local pve-gateway
+10.0.0.x pve-env1.local pve-env1
+10.0.0.x pve-env2.local pve-env2
 ```
 
 2. **Fixed SSH configuration:**
@@ -602,7 +602,7 @@ sudo systemctl restart pve-cluster
 sudo nano /etc/netplan/00-installer-config.yaml
 ```
 
-**Configuration:** Already correct (10.0.0.30/24, gateway 10.0.0.1)
+**Configuration:** Already correct (10.0.0.x/24, gateway 10.0.0.x)
 
 **Applied:**
 ```bash
@@ -631,10 +631,10 @@ sudo nano /etc/hosts
 Changed to:
 ```
 127.0.0.1 localhost.localdomain localhost
-10.0.0.10 pve-gateway.local pve-gateway
-10.0.0.11 pve-services.local pve-services
-10.0.0.12 pve-env1.local pve-env1
-10.0.0.13 pve-env2.local pve-env2
+10.0.0.x pve-gateway.local pve-gateway
+10.0.0.x pve-services.local pve-services
+10.0.0.x pve-env1.local pve-env1
+10.0.0.x pve-env2.local pve-env2
 ```
 
 2. **Fixed SSH configuration:**
@@ -668,10 +668,10 @@ qm destroy 100
 **Ensured all 4 nodes had correct /etc/hosts:**
 ```
 127.0.0.1 localhost.localdomain localhost
-10.0.0.10 pve-gateway.local pve-gateway
-10.0.0.11 pve-services.local pve-services
-10.0.0.12 pve-env1.local pve-env1
-10.0.0.13 pve-env2.local pve-env2
+10.0.0.x pve-gateway.local pve-gateway
+10.0.0.x pve-services.local pve-services
+10.0.0.x pve-env1.local pve-env1
+10.0.0.x pve-env2.local pve-env2
 ```
 
 #### Step 5.2: Restart Services on All Nodes
@@ -696,19 +696,19 @@ pvecm status
 
 **SSH connectivity:**
 ```bash
-ssh admin@10.0.0.10  # ✓ pve-gateway
-ssh admin@10.0.0.11  # ✓ pve-services
-ssh admin@10.0.0.12  # ✓ pve-env1
-ssh admin@10.0.0.13  # ✓ pve-env2
+ssh admin@10.0.0.x  # ✓ pve-gateway
+ssh admin@10.0.0.x  # ✓ pve-services
+ssh admin@10.0.0.x  # ✓ pve-env1
+ssh admin@10.0.0.x  # ✓ pve-env2
 ```
 
 **VM connectivity:**
 ```bash
-ping 10.0.0.20  # ✓ pve-ca-root
-ping 10.0.0.21  # ✓ pve-ca-intermediate
-ping 10.0.0.30  # ✓ services-host
-ping 10.0.0.31  # ✓ VM 700
-ping 10.0.0.40  # ✓ ubuntu
+ping 10.0.0.x  # ✓ pve-ca-root
+ping 10.0.0.x  # ✓ pve-ca-intermediate
+ping 10.0.0.x  # ✓ services-host
+ping 10.0.0.x  # ✓ VM 700
+ping 10.0.0.x  # ✓ ubuntu
 ```
 
 **✓ All systems operational**
@@ -719,15 +719,15 @@ ping 10.0.0.40  # ✓ ubuntu
 
 ### Network Topology
 ```
-Heimdall (192.168.100.1) - WiFi bridge to home network
+Heimdall (192.168.100.x) - WiFi bridge to home network
     ↓
 Switch (temporary bypass of OPNSense)
     ↓
-├─ pve-gateway (10.0.0.10) - Ready for OPNSense deployment
-├─ pve-services (10.0.0.11)
-├─ pve-env1 (10.0.0.12)
-├─ pve-env2 (10.0.0.13)
-└─ Workstation (10.0.0.199)
+├─ pve-gateway (10.0.0.x) - Ready for OPNSense deployment
+├─ pve-services (10.0.0.x)
+├─ pve-env1 (10.0.0.x)
+├─ pve-env2 (10.0.0.x)
+└─ Workstation (10.0.0.x)
 ```
 
 **Next step:** Reconnect OPNSense and configure properly with WAN on 192.168.100.x and LAN on 10.0.0.x (different subnets).
@@ -735,23 +735,23 @@ Switch (temporary bypass of OPNSense)
 ### Migrated Assets
 
 **Proxmox Hosts:**
-- ✓ pve-gateway: 192.168.100.2 → 10.0.0.10
-- ✓ pve-services: 192.168.100.3 → 10.0.0.11
-- ✓ pve-env1: 192.168.100.7 → 10.0.0.12
-- ✓ pve-env2: 192.168.100.4 → 10.0.0.13
+- ✓ pve-gateway: 192.168.100.x → 10.0.0.x
+- ✓ pve-services: 192.168.100.x → 10.0.0.x
+- ✓ pve-env1: 192.168.100.x → 10.0.0.x
+- ✓ pve-env2: 192.168.100.x → 10.0.0.x
 
 **Virtual Machines:**
-- ✓ VM 200: 192.168.100.6 → 10.0.0.30 (services-host/Docker Host 1)
-- ✓ VM 401: 192.168.100.77 → 10.0.0.40 (ubuntu development)
-- ✓ VM 500: 192.168.100.60 → 10.0.0.20 (pve-ca-root)
-- ✓ VM 501: 192.168.100.61 → 10.0.0.21 (pve-ca-intermediate)
-- ✓ VM 700: 192.168.100.66 → 10.0.0.31 (Docker Host 2)
+- ✓ VM 200: 192.168.100.x → 10.0.0.x (services-host/Docker Host 1)
+- ✓ VM 401: 192.168.100.x → 10.0.0.x (ubuntu development)
+- ✓ VM 500: 192.168.100.x → 10.0.0.x (pve-ca-root)
+- ✓ VM 501: 192.168.100.x → 10.0.0.x (pve-ca-intermediate)
+- ✓ VM 700: 192.168.100.x → 10.0.0.x (Docker Host 2)
 
 **Powered Off (for later VLAN migration):**
-- VM 300: Kali-attack (currently 10.99.0.10)
-- VM 301: metasploitable2 (currently 10.99.0.20)
-- VM 302: DVWA (currently 10.99.0.30)
-- VM 400: malware-win11 (currently 10.98.0.10)
+- VM 300: Kali-attack (currently 10.99.0.x)
+- VM 301: metasploitable2 (currently 10.99.0.x)
+- VM 302: DVWA (currently 10.99.0.x)
+- VM 400: malware-win11 (currently 10.98.0.x)
 
 **Deleted:**
 - VM 100: pfSense (no longer needed)
@@ -782,7 +782,7 @@ Switch (temporary bypass of OPNSense)
 
 ### 2. Quorum Loss During Migration
 
-**Problem:** After changing pve-env1 to 10.0.0.12, cluster lost quorum and VMs could not be started.
+**Problem:** After changing pve-env1 to 10.0.0.x, cluster lost quorum and VMs could not be started.
 
 **Root Cause:** Other nodes still on 192.168.100.x could not communicate with pve-env1 on different subnet.
 
@@ -934,12 +934,12 @@ Switch (temporary bypass of OPNSense)
 # update-cluster-ips.sh
 
 NEW_HOSTS="127.0.0.1 localhost.localdomain localhost
-10.0.0.10 pve-gateway.local pve-gateway
-10.0.0.11 pve-services.local pve-services
-10.0.0.12 pve-env1.local pve-env1
-10.0.0.13 pve-env2.local pve-env2"
+10.0.0.x pve-gateway.local pve-gateway
+10.0.0.x pve-services.local pve-services
+10.0.0.x pve-env1.local pve-env1
+10.0.0.x pve-env2.local pve-env2"
 
-NODES="10.0.0.10 10.0.0.11 10.0.0.12 10.0.0.13"
+NODES="10.0.0.x 10.0.0.x 10.0.0.x 10.0.0.x"
 
 for node in $NODES; do
   echo "Updating $node..."
@@ -989,20 +989,20 @@ On Day 1, provide clear diagram:
 
 ```
 ❌ WRONG (Will Not Work):
-Heimdall (192.168.100.1)
+Heimdall (192.168.100.x)
     ↓
-OPNSense WAN (192.168.100.254)  ← Same subnet
+OPNSense WAN (192.168.100.x)  ← Same subnet
     ↓
-OPNSense LAN (192.168.100.253)  ← Same subnet
+OPNSense LAN (192.168.100.x)  ← Same subnet
     ↓
 Proxmox (192.168.100.x)
 
 ✓ CORRECT (Will Work):
-Heimdall (192.168.100.1)
+Heimdall (192.168.100.x)
     ↓
-OPNSense WAN (192.168.100.250)  ← Different subnet
+OPNSense WAN (192.168.100.x)  ← Different subnet
     ↓
-OPNSense LAN (10.0.0.1)         ← Different subnet
+OPNSense LAN (10.0.0.x)         ← Different subnet
     ↓
 Proxmox (10.0.0.x)
 ```
@@ -1016,14 +1016,14 @@ Explain: "This requires renumbering Proxmox nodes. Here's how..."
 ### 9. Document Temporary vs. Permanent Gateways
 
 **Confusion During Migration:**
-- Some VMs had gateway: 10.0.0.1 (future OPNSense, doesn't exist yet)
+- Some VMs had gateway: 10.0.0.x (future OPNSense, doesn't exist yet)
 - Some had gateway: 10.0.0.XX (their Proxmox host, temporary)
 - Unclear which was correct
 
 **Better Approach:**
 
 **During migration, explicitly state:**
-- "Set gateway to 10.0.0.1 (final OPNSense gateway, won't work until OPNSense configured)"
+- "Set gateway to 10.0.0.x (final OPNSense gateway, won't work until OPNSense configured)"
 - "VMs can communicate locally but no internet until OPNSense deployed"
 - "This is expected and correct"
 
@@ -1239,8 +1239,8 @@ With proper planning, checklists, and automation, a similar migration in the fut
 ### Next Steps
 
 1. Configure OPNSense with correct architecture:
-   - WAN: 192.168.100.250/24 (to heimdall)
-   - LAN: 10.0.0.1/24 (rack gateway)
+   - WAN: 192.168.100.x/24 (to heimdall)
+   - LAN: 10.0.0.x/24 (rack gateway)
    
 2. Create VLANs for security labs:
    - VLAN 40: 192.168.40.0/24
@@ -1259,21 +1259,21 @@ With proper planning, checklists, and automation, a similar migration in the fut
 ### New IP Allocations
 
 **Management Network (10.0.0.0/24):**
-- 10.0.0.1 - OPNSense LAN (gateway)
-- 10.0.0.10 - pve-gateway
-- 10.0.0.11 - pve-services
-- 10.0.0.12 - pve-env1
-- 10.0.0.13 - pve-env2
-- 10.0.0.20 - pve-ca-root (VM 500)
-- 10.0.0.21 - pve-ca-intermediate (VM 501)
-- 10.0.0.30 - services-host (VM 200)
-- 10.0.0.31 - VM 700 (Docker Host 2)
-- 10.0.0.40 - ubuntu (VM 401)
-- 10.0.0.100-254 - DHCP pool
+- 10.0.0.x - OPNSense LAN (gateway)
+- 10.0.0.x - pve-gateway
+- 10.0.0.x - pve-services
+- 10.0.0.x - pve-env1
+- 10.0.0.x - pve-env2
+- 10.0.0.x - pve-ca-root (VM 500)
+- 10.0.0.x - pve-ca-intermediate (VM 501)
+- 10.0.0.x - services-host (VM 200)
+- 10.0.0.x - VM 700 (Docker Host 2)
+- 10.0.0.x - ubuntu (VM 401)
+- 10.0.0.x-254 - DHCP pool
 
 **WAN Network (192.168.100.0/24):**
-- 192.168.100.1 - Heimdall
-- 192.168.100.250 - OPNSense WAN
+- 192.168.100.x - Heimdall
+- 192.168.100.x - OPNSense WAN
 
 ### Critical Config Files
 

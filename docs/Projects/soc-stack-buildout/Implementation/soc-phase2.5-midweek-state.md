@@ -101,7 +101,7 @@ Tuning has not degraded detection coverage. Noise reduction is isolated to low-v
 
 Notable: services-host dropped from the highest-volume agent in Phase 1 to near the bottom, confirming rule 87907 suppression is the primary driver of overall volume reduction.
 
-Notable: VM 401 (ubuntu, pve-services, 10.0.30.40) did not appear in the last 2 days of agent activity. VM is powered off -- expected.
+Notable: VM 401 (ubuntu, pve-services, 10.0.30.x) did not appear in the last 2 days of agent activity. VM is powered off -- expected.
 
 ---
 

@@ -66,7 +66,7 @@ Suricata IDS/IPS runs on the WAN interface in detection-only mode. EVE JSON logs
 | Layer | Role |
 |-------|------|
 | Pi-hole (Heimdall) | Network-wide DNS filtering/ad blocking, primary DNS for all VLANs |
-| OPNSense Unbound | Query forwarding — `homelab.local` queries forwarded to internal DNS at 192.168.100.1 |
+| OPNSense Unbound | Query forwarding — `homelab.local` queries forwarded to internal DNS at 192.168.100.x |
 | Internal DNS records | `elasticsearch.homelab.local` → NPM IP |
 
 ## Remote access

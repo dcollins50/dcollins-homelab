@@ -3,13 +3,13 @@ name: wazuh-manager
 type: vm
 vmid: 601
 node: pve-env2
-ip: 10.0.10.11
+ip: 10.0.10.x
 vlan: VLAN10
 status: live
 role: Wazuh SIEM Manager
 ---
 
-**Login:** `admin`, SSH key auth (key copied Sep 25, 2026, confirmed with BatchMode test).
+**Login:** `[admin-user]`, SSH key auth (key copied Sep 25, 2026, confirmed with BatchMode test).
 
 **Specs:** 8GB RAM, 2 cores.
 **Version:** Wazuh 4.14.4.

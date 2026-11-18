@@ -3,7 +3,7 @@ name: npm-dmz
 type: lxc
 vmid: 2200
 node: pve-env1
-ip: 10.0.50.69
+ip: 10.0.50.x
 vlan: VLAN50
 status: live
 role: Public-facing reverse proxy

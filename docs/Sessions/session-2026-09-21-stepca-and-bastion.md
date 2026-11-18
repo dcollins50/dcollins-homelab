@@ -59,14 +59,14 @@ date: 2026-09-21
 
 **OPNSense config:**
 - Created VLAN device `vlan09` (parent `re0`, tag 51).
-- Assigned as interface `DMZBastion`, static `10.0.51.1/24`, no DHCP (static-only by design, matching the rest of the trust/security VLANs).
+- Assigned as interface `DMZBastion`, static `10.0.51.x/24`, no DHCP (static-only by design, matching the rest of the trust/security VLANs).
 
-**Firewall rules (DMZBastion interface, all scoped to source alias `bastion` = `10.0.51.10`, not the whole `DMZBastion net`):**
+**Firewall rules (DMZBastion interface, all scoped to source alias `bastion` = `10.0.51.x`, not the whole `DMZBastion net`):**
 
 | # | Destination | Port | Purpose |
 |---|---|---|---|
-| 1 | `10.0.51.1` | 53 | DNS to OPNSense's own resolver |
-| 2 | `10.0.51.1` | 123 | NTP to OPNSense's own server |
+| 1 | `10.0.51.x` | 53 | DNS to OPNSense's own resolver |
+| 2 | `10.0.51.x` | 123 | NTP to OPNSense's own server |
 | 3 | `cf_warp_ingress` (Cloudflare WARP IPv4 ranges) | `cf_warp_ports` (443, 500, 1701, 2408, 4443, 4500, 8095, 8443 UDP) | WARP connector tunnel |
 | 4 | `cf_warp_api` (162.159.137.105, 162.159.138.105) | 443 | WARP client orchestration API |
 | 5 | `cf_warp_doh` (162.159.36.1, 162.159.46.1) | 443 | WARP DNS-over-HTTPS |
@@ -82,7 +82,7 @@ date: 2026-09-21
 
 ## 3. pve-bastion LXC build
 
-- Created VMID 2202, `pve-bastion`, Debian 13, **unprivileged**, on pve-services, static `10.0.51.10/24`, DNS pointed at `10.0.51.1` (not Heimdall — same mistake as pve-int-stepca avoided this time).
+- Created VMID 2202, `pve-bastion`, Debian 13, **unprivileged**, on pve-services, static `10.0.51.x/24`, DNS pointed at `10.0.51.x` (not Heimdall — same mistake as pve-int-stepca avoided this time).
 - Bootstrapping hit the same class of issues as pve-int-stepca (IPv6 hang on apt, `http://` vs `https://` sources.list mismatch against the firewall's port-443-only rule, Fastly IP range gap) — all fixed the same way.
 - Installed `cloudflare-warp` package (official repo). This pulled in a large GUI dependency chain (GTK, WebKit, GStreamer, etc.) since the official Debian package bundles the full client, not just the headless daemon — noted as extra attack surface worth remembering, not fixed this session.
 - Hit the known Debian 13 LXC `systemd-sysctl.service` failure (`243/CREDENTIALS`) — same root cause as any Debian 13 LXC without nesting (systemd's `ImportCreds=` doesn't work in unprivileged containers without it). Fixed by enabling `nesting=1` on the container.
@@ -93,20 +93,20 @@ date: 2026-09-21
 
 ## 4. Publishing Authentik for Cloudflare Access (new tunnel + LXC)
 
-**Root cause discovered:** Authentik has only ever been resolved *internally* (Pi-hole/Unbound overrides → `10.0.20.30`). It was never actually routed through the existing Cloudflare Tunnel (`web-tunnel`) to be reachable from the public internet — confirmed by checking `web-tunnel`'s Routes column (empty) and by a cellular-data test failing outright.
+**Root cause discovered:** Authentik has only ever been resolved *internally* (Pi-hole/Unbound overrides → `10.0.20.x`). It was never actually routed through the existing Cloudflare Tunnel (`web-tunnel`) to be reachable from the public internet — confirmed by checking `web-tunnel`'s Routes column (empty) and by a cellular-data test failing outright.
 
 Cloudflare Access's own backend needs to reach the IdP's OIDC endpoints over the real public internet to do the token exchange — this is not something internal DNS tricks can work around.
 
 **Decision:** rather than exposing Authentik directly, or publishing it through the existing general-purpose tunnel, built a **second, dedicated** Cloudflare Tunnel + LXC specifically for this, to keep the path that exposes the IdP isolated from the path that exposes public content.
 
-- New LXC `pve-authtunnel`, VMID 2100, unprivileged, VLAN50 (DMZ — this is not part of the bastion's own isolation, it's a separate tunnel with no route to VLAN51), static `10.0.50.70/24`.
+- New LXC `pve-authtunnel`, VMID 2100, unprivileged, VLAN50 (DMZ — this is not part of the bastion's own isolation, it's a separate tunnel with no route to VLAN51), static `10.0.50.x/24`.
 - New Cloudflare Tunnel `auth-tunnel`, `cloudflared` installed and registered as a systemd service.
-- Firewall rules scoped narrowly: DNS/NTP to `10.0.50.1`, outbound to `cf_edge_ipv4` (tunnel + package installs), and a route to Authentik specifically (destination alias `authentik_host`, later corrected — see below).
+- Firewall rules scoped narrowly: DNS/NTP to `10.0.50.x`, outbound to `cf_edge_ipv4` (tunnel + package installs), and a route to Authentik specifically (destination alias `authentik_host`, later corrected — see below).
 - Public hostname route added: `authentik.homelab.example` → origin.
 
-**Cert trust chain issue:** first attempt pointed the route directly at Authentik's own listener (`10.0.30.10:9443`), which uses a **self-signed** cert (Authentik's own default), not one issued by the homelab CA. Result: Cloudflare edge returned Bad Gateway.
+**Cert trust chain issue:** first attempt pointed the route directly at Authentik's own listener (`10.0.30.x:9443`), which uses a **self-signed** cert (Authentik's own default), not one issued by the homelab CA. Result: Cloudflare edge returned Bad Gateway.
 
-**Fix:** repointed the route at **NPM** (`10.0.20.30:443`) instead — the same path that already terminates TLS with a properly-issued cert, confirmed working when this was tested via curl earlier in the step-ca work. Updated both the Cloudflare route and the DMZ firewall rule (destination `authentik_host`/9443 → `internal_npm`/443).
+**Fix:** repointed the route at **NPM** (`10.0.20.x:443`) instead — the same path that already terminates TLS with a properly-issued cert, confirmed working when this was tested via curl earlier in the step-ca work. Updated both the Cloudflare route and the DMZ firewall rule (destination `authentik_host`/9443 → `internal_npm`/443).
 
 **CA trust for the tunnel itself:** copied the homelab root cert onto pve-authtunnel (via the Proxmox host, same cross-VLAN-avoidance pattern as step-ca) and configured the route's **CA Pool** setting (`/etc/ssl/certs/homelab-root-ca.crt`) plus **Origin Server Name** (`authentik.homelab.example`), rather than disabling TLS verification.
 

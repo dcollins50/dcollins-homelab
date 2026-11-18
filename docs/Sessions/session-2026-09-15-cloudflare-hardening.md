@@ -12,9 +12,9 @@ date: 2026-09-15
 
 ## 1. Authentik Deployment — Troubleshooting Chain
 
-The Authentik LXC itself was already created per the Sep 14 decision (ID 2201, on pve-services, tagged VLAN30/10.0.30.10). Getting it actually reachable and working took several rounds of troubleshooting:
+The Authentik LXC itself was already created per the Sep 14 decision (ID 2201, on pve-services, tagged VLAN30/10.0.30.x). Getting it actually reachable and working took several rounds of troubleshooting:
 
-**Certificate:** Issued a custom internal PKI certificate for `authentik.homelab.example` through the Intermediate CA. Note: at the time of issuance, the Intermediate CA's actual reachable IP was still 10.0.0.21 (the flat-network address), not the VLAN30 address its documentation implied, another symptom of the CA migration gap flagged on Sep 14.
+**Certificate:** Issued a custom internal PKI certificate for `authentik.homelab.example` through the Intermediate CA. Note: at the time of issuance, the Intermediate CA's actual reachable IP was still 10.0.0.x (the flat-network address), not the VLAN30 address its documentation implied, another symptom of the CA migration gap flagged on Sep 14.
 
 **504 Gateway Timeout:** After configuring the NPM proxy host, requests to Authentik timed out. Traced through three different network vantage points (pve-services succeeded from the management VLAN, services-host failed from VLAN20) to a missing firewall rule, the Services → DEV pinhole had silently vanished and needed rebuilding.
 
@@ -61,7 +61,7 @@ Four protections stacked against `ntfy.homelab.example` in one pass:
 
 ## Open items carried forward
 
-- The Intermediate CA's flat-network address (10.0.0.21) used during this session's cert issuance is itself a symptom of the still-pending VLAN30 migration, see [[PKI]].
+- The Intermediate CA's flat-network address (10.0.0.x) used during this session's cert issuance is itself a symptom of the still-pending VLAN30 migration, see [[PKI]].
 - Verify Bot Fight Mode doesn't interfere with legitimate automated clients (Uptime Kuma's publish calls to ntfy specifically), this was flagged as worth testing but not explicitly confirmed clean in this session.
 
 ---

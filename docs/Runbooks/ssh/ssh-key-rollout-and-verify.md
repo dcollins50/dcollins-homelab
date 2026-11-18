@@ -27,11 +27,11 @@ ssh -t host "sudo some-command"
 
 ## Gotcha 3: an ambiguous sudo prompt across multiple same-named accounts
 
-With `-t` fixed, the sudo prompt just reads `[sudo] password for <user>:` with no hostname. If several hosts in a loop share the same account name (e.g. several VMs all logging in as `admin`), every prompt looks identical, easy to lose track of which host's password is actually being typed.
+With `-t` fixed, the sudo prompt just reads `[sudo] password for <user>:` with no hostname. If several hosts in a loop share the same account name (e.g. several VMs all logging in as `[admin-user]`), every prompt looks identical, easy to lose track of which host's password is actually being typed.
 
 Fix: use `sudo -p` to build a custom prompt string with the hostname baked in:
 ```bash
-ssh -t host "sudo -p '[sudo] password for admin@\$name: ' some-command"
+ssh -t host "sudo -p '[sudo] password for [admin-user]@\$name: ' some-command"
 ```
 
 ## Full rollout script pattern

@@ -74,7 +74,7 @@ Custom rule IDs must be in the range 100000 to 120000. IDs below 100000 are rese
 
 - Phase 1 baseline document with top 20 rules ranked by alert count
 
-- SSH access to wazuh-manager (VM 601, 10.0.10.11)
+- SSH access to wazuh-manager (VM 601, 10.0.10.x)
 
 - Sudo access on wazuh-manager
 
@@ -100,7 +100,7 @@ Decision: Suppress
 
 Reason: Fired 4,200 times in 7 days, all from internal management
 
-         workstation 10.0.0.199. Known expected behavior from
+         workstation 10.0.0.x. Known expected behavior from
 
          automated monitoring scripts.
 

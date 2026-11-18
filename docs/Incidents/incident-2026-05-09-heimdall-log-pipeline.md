@@ -15,7 +15,7 @@ May 9-11, 2026  |  Heimdall Log Pipeline Failure
 | --- | --- |
 | **Date Closed** | May 11, 2026 |
 | **Author** | Daniel Collins |
-| **Affected Systems** | Heimdall (RPi5), soc-stack (10.0.10.10), Logstash, Elasticsearch |
+| **Affected Systems** | Heimdall (RPi5), soc-stack (10.0.10.x), Logstash, Elasticsearch |
 | **Severity** | Medium -- no data loss, no security breach; log visibility lost for ~50 hours |
 | **Status** | Resolved |
 

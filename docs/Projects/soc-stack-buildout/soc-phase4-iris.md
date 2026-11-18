@@ -21,7 +21,7 @@ Phase 4: Case Management with DFIR-IRIS
 | **Deployment Host** | VM 200 (services-host, pve-env1) |
 | **Estimated Time** | 3 to 5 hours (deploy and integrate) |
 
-> **Staleness note (added later):** This document's "Status: Planned" header and "DFIR-IRIS has not yet been deployed" line below are now out of date. IRIS was actually deployed Sep 19, 2026 as [[pve-iris]] (VM 604, pve-env1, 10.0.10.13) — a different host/IP than this document assumes, built as a full clone of a Docker template rather than the from-scratch Docker Compose procedure in §4. Treat the learning content (case model, triage-to-case workflow, API integration pattern) as still valid, but not the specific deployment architecture in §2 or the procedure in §4.
+> **Staleness note (added later):** This document's "Status: Planned" header and "DFIR-IRIS has not yet been deployed" line below are now out of date. IRIS was actually deployed Sep 19, 2026 as [[pve-iris]] (VM 604, pve-env1, 10.0.10.x) — a different host/IP than this document assumes, built as a full clone of a Docker template rather than the from-scratch Docker Compose procedure in §4. Treat the learning content (case model, triage-to-case workflow, API integration pattern) as still valid, but not the specific deployment architecture in §2 or the procedure in §4.
 
 # **1. Purpose and Learning Objectives**
 

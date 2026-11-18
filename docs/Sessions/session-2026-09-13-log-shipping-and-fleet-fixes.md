@@ -43,7 +43,7 @@ truncate -s 0 /var/ossec/logs/alerts/2026/Aug/ossec-alerts-20.log
 
 systemctl restart filebeat
 ```
-Confirmed clean Filebeat startup: registry loaded, harvester started, connected to `https://10.0.10.10:9200`, index template loaded.
+Confirmed clean Filebeat startup: registry loaded, harvester started, connected to `https://10.0.10.x:9200`, index template loaded.
 
 ### Permanent Fix — Size-Capped Rotation
 Added to `<global>` in `/var/ossec/etc/ossec.conf`:
@@ -69,7 +69,7 @@ Routine post-incident check of `services-host` (`docker ps`) showed every contai
 
 ### Verification Before Fixing
 - Confirmed via WAN firewall ruleset: **no port forwards exist**, so this was never internet-reachable — internal-network risk only.
-- Confirmed `portainer-server` (172.20.0.10) and `portainer-agent` (172.20.0.11) share the `management-net` Docker network, so the published host port was unnecessary — Docker's internal DNS (`portainer-agent:9001`) is sufficient for the server to reach the agent.
+- Confirmed `portainer-server` (172.20.0.x) and `portainer-agent` (172.20.0.x) share the `management-net` Docker network, so the published host port was unnecessary — Docker's internal DNS (`portainer-agent:9001`) is sufficient for the server to reach the agent.
 
 ### Fix
 ```bash
@@ -79,12 +79,12 @@ docker run -d \
   --name portainer-agent \
   --restart always \
   --network management-net \
-  --ip 172.20.0.11 \
+  --ip 172.20.0.x \
   -v /var/lib/docker/volumes:/var/lib/docker/volumes \
   -v /var/run/docker.sock:/var/run/docker.sock \
   portainer/agent:latest
 ```
-Updated the Portainer environment endpoint from `10.0.20.30:9001` (host IP) to `portainer-agent:9001` (internal DNS). Confirmed environment returned to `Up`.
+Updated the Portainer environment endpoint from `10.0.20.x:9001` (host IP) to `portainer-agent:9001` (internal DNS). Confirmed environment returned to `Up`.
 
 ---
 
@@ -101,18 +101,18 @@ Exported Uptime Kuma's full monitor list to determine *exactly* what `services-h
 | Proxmox nodes (`10.0.0.x:8006`) | Services → LAN | Existing `Proxmox_Nodes` alias rule |
 | Vaultwarden/Portainer/Stremio/kalshi-mm | intra-VLAN (`10.0.20.x`) | N/A — never crosses the firewall |
 | Google/Cloudflare DNS | Services → Internet | Existing internet-egress rule |
-| OPNSense (`10.0.0.1`) | Services → gateway | Existing "Services to gateway" rule |
-| **Pi-hole** (`192.168.100.1`, HTTP) | Services → LAN | **Nothing — needed a new rule** |
-| **Heimdall** (`192.168.100.1`, ping) | Services → LAN | **Nothing — needed a new rule** |
+| OPNSense (`10.0.0.x`) | Services → gateway | Existing "Services to gateway" rule |
+| **Pi-hole** (`192.168.100.x`, HTTP) | Services → LAN | **Nothing — needed a new rule** |
+| **Heimdall** (`192.168.100.x`, ping) | Services → LAN | **Nothing — needed a new rule** |
 
 ### New Rules
-**Management → Services:** `LAN net` → `10.0.20.30`, TCP, destination port = new alias `services_host_admin_ports`:
+**Management → Services:** `LAN net` → `10.0.20.x`, TCP, destination port = new alias `services_host_admin_ports`:
 ```
 22, 80, 81, 443, 3000, 222, 9443, 8080, 3001
 ```
 (derived from `ss -tulpn` on `services-host`: SSH, NPM 80/81/443, Gitea web 3000 + SSH 222, Portainer 9443, Vaultwarden 8080, Uptime Kuma 3001)
 
-**Services → Management:** Split into two rules (ICMP and TCP can't share one OPNSense rule), both scoped to `192.168.100.1` only:
+**Services → Management:** Split into two rules (ICMP and TCP can't share one OPNSense rule), both scoped to `192.168.100.x` only:
 - TCP port 80 (Pi-hole)
 - ICMP Echo Request (Heimdall)
 
@@ -128,8 +128,8 @@ Any `*.homelab.local` hostname not already in Pi-hole's static hosts list return
 
 ### Root Cause
 Genuine circular forward:
-1. Pi-hole's `revServers` config: `true,10.0.0.0/24,10.0.0.1,homelab.local` — forwards **all** `homelab.local` queries (not just reverse/PTR) to OPNSense.
-2. OPNSense's Unbound had its own Query Forwarding rule sending `homelab.local` queries straight back to Pi-hole (`192.168.100.1`).
+1. Pi-hole's `revServers` config: `true,10.0.0.0/24,10.0.0.x,homelab.local` — forwards **all** `homelab.local` queries (not just reverse/PTR) to OPNSense.
+2. OPNSense's Unbound had its own Query Forwarding rule sending `homelab.local` queries straight back to Pi-hole (`192.168.100.x`).
 3. Anything not already cached/hosted locally on either side bounced indefinitely.
 
 ### Fix
@@ -143,7 +143,7 @@ Removed/disabled the `homelab.local` domain association in OPNSense: **Services 
 `sudo whoami`, `hostname -f`, and similar took 15–33 seconds on `pve-env1` — plain `dig` (A record) lookups on the same hostname were instant (~1ms).
 
 ### Investigation
-- `dig AAAA pve-env1.homelab.local` returned `communications error: timed out` — first against Tailscale's MagicDNS stub (`<tailscale-ip>`), then against Pi-hole directly (`192.168.100.1`) after disabling Tailscale's DNS override (`tailscale set --accept-dns=false`).
+- `dig AAAA pve-env1.homelab.local` returned `communications error: timed out` — first against Tailscale's MagicDNS stub (`100.100.100.100`), then against Pi-hole directly (`192.168.100.x`) after disabling Tailscale's DNS override (`tailscale set --accept-dns=false`).
 - Root cause was the **same loop-adjacent config from Issue #4**: Pi-hole's domain-wide conditional forward for `homelab.local` was sending AAAA queries to OPNSense's Unbound, which was hanging (not cleanly refusing) rather than replying NODATA — because `.local` is technically reserved for mDNS.
 - `sudo` and `hostname -f` use `getaddrinfo()`, which queries both A and AAAA records; the hanging AAAA lookup was the entire delay. Plain `dig` in earlier tests only ever asked for A records, which is why it looked fast in isolation.
 
@@ -161,7 +161,7 @@ This had almost certainly been silently costing 15–20 seconds on every `sudo` 
 `tailscaled` was running on `services-host` with no prior documentation — described as a legacy break-glass remote access path from a previous incident.
 
 ### State at Discovery
-7 machines on the tailnet (`<host-redacted>`, `heimdall`, `jetson`, `pve-dev`, `pve-gateway`, `pve-services`, `services-host`), all showing **node key expired since June 27, 2026** (~2.5 months). Confirmed via `tailscale ping` that the path was genuinely non-functional, not just displaying stale dashboard status.
+7 machines on the tailnet (`[workstation]`, `heimdall`, `jetson`, `pve-dev`, `pve-gateway`, `pve-services`, `services-host`), all showing **node key expired since June 27, 2026** (~2.5 months). Confirmed via `tailscale ping` that the path was genuinely non-functional, not just displaying stale dashboard status.
 
 ### Secondary Bug — Re-Auth Hang
 `sudo tailscale up` hung with no output on `services-host`. Root cause: Pi-hole was sinkholing `controlplane.tailscale.com` to `0.0.0.0` — a blocklist false positive. Fixed by whitelisting the domain in Pi-hole; confirmed via `dig controlplane.tailscale.com` returning real Tailscale IPs afterward.

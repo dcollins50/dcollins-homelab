@@ -13,7 +13,7 @@ March 30, 2026  |  SOC TLS Hardening, Wazuh Deployment, Heimdall Route Fix
 | **Date** | March 30, 2026 |
 | --- | --- |
 | **Author** | Daniel Collins |
-| **Affected Systems** | soc-stack (10.0.10.10), wazuh-manager (10.0.10.11), Heimdall, OPNSense, NPM, PKI |
+| **Affected Systems** | soc-stack (10.0.10.x), wazuh-manager (10.0.10.x), Heimdall, OPNSense, NPM, PKI |
 | **Status** | Partial — core infrastructure complete, agent deployment pending |
 
 Two firewall gaps discovered during this session (SOC DNS resolution, SSH to Heimdall) are documented separately as an incident: [[incident-2026-03-30-soc-dns-firewall-gap]]. This document covers the deliberate implementation work from the same day.
@@ -26,11 +26,11 @@ This session continued infrastructure work from the March 28 session. Objectives
 
 ## **1. Heimdall Stale Route Fix**
 
-The route 10.99.0.0/24 via 192.168.100.2 was a stale temporary route pointing at a nonexistent device. It was present in the live routing table but absent from the NetworkManager persistent config, meaning it would have been lost on reboot anyway. The route was deleted and added correctly to the NM connection file.
+The route 10.99.0.0/24 via 192.168.100.x was a stale temporary route pointing at a nonexistent device. It was present in the live routing table but absent from the NetworkManager persistent config, meaning it would have been lost on reboot anyway. The route was deleted and added correctly to the NM connection file.
 
-- Deleted: sudo ip route del 10.99.0.0/24 via 192.168.100.2 dev eth0
+- Deleted: sudo ip route del 10.99.0.0/24 via 192.168.100.x dev eth0
 
-- Added route2=10.99.0.0/24,192.168.100.250 to /etc/NetworkManager/system-connections/Wired connection 1.nmconnection
+- Added route2=10.99.0.0/24,192.168.100.x to /etc/NetworkManager/system-connections/Wired connection 1.nmconnection
 
 - Reloaded NM connection — route confirmed proto static metric 100
 
@@ -38,9 +38,9 @@ The route 10.99.0.0/24 via 192.168.100.2 was a stale temporary route pointing at
 
 Elasticsearch and Kibana were configured to use TLS with certificates issued from the internal PKI. This required issuing certificates from the Intermediate CA, configuring Elasticsearch to serve HTTPS, updating Kibana to connect to Elasticsearch over HTTPS, and providing the intermediate CA cert to Kibana for chain validation.
 
-A cert mismatch issue was encountered during reissuance — OpenSSL CA refused to reissue a cert with the same CN without first revoking the existing one. The cert was revoked and reissued with an IP SAN (10.0.10.10) added alongside the hostname SAN (elasticsearch.homelab.local). This was required for Filebeat on wazuh-manager to connect directly by IP.
+A cert mismatch issue was encountered during reissuance — OpenSSL CA refused to reissue a cert with the same CN without first revoking the existing one. The cert was revoked and reissued with an IP SAN (10.0.10.x) added alongside the hostname SAN (elasticsearch.homelab.local). This was required for Filebeat on wazuh-manager to connect directly by IP.
 
-- Cert issued: elasticsearch.homelab.local with SAN DNS=elasticsearch.homelab.local, IP=10.0.10.10
+- Cert issued: elasticsearch.homelab.local with SAN DNS=elasticsearch.homelab.local, IP=10.0.10.x
 
 - Cert issued: kibana.homelab.local
 
@@ -50,7 +50,7 @@ A cert mismatch issue was encountered during reissuance — OpenSSL CA refused t
 
 - Kibana accessible at https://elasticsearch.homelab.local via NPM
 
-- Pi-hole DNS: elasticsearch.homelab.local → NPM IP (10.0.20.30)
+- Pi-hole DNS: elasticsearch.homelab.local → NPM IP (10.0.20.x)
 
 ## **3. Logstash Pipeline Fix**
 
@@ -62,21 +62,21 @@ After Elasticsearch was restarted with TLS enabled, Logstash lost its connection
 
 ## **4. Wazuh Manager Deployment**
 
-Wazuh Manager v4.14.4 was deployed as VM 601 on pve-env2 at 10.0.10.11. The VM was configured with 8GB RAM and 2 cores. Wazuh Manager-only deployment was chosen — no Wazuh Indexer or Dashboard, as the existing Elasticsearch stack handles those functions. Filebeat was installed on wazuh-manager to ship Wazuh alerts to Elasticsearch.
+Wazuh Manager v4.14.4 was deployed as VM 601 on pve-env2 at 10.0.10.x. The VM was configured with 8GB RAM and 2 cores. Wazuh Manager-only deployment was chosen — no Wazuh Indexer or Dashboard, as the existing Elasticsearch stack handles those functions. Filebeat was installed on wazuh-manager to ship Wazuh alerts to Elasticsearch.
 
 - VM 601 created: wazuh-manager, pve-env2, 8GB RAM, 2 cores, 50GB disk, VLAN10
 
 - Wazuh Manager v4.14.4 installed and running
 
-- OPNSense LAN rule added: LAN net → 10.0.10.11 → TCP 22
+- OPNSense LAN rule added: LAN net → 10.0.10.x → TCP 22
 
-- OPNSense SOC rule added: LAN net → 10.0.10.11 → TCP 22
+- OPNSense SOC rule added: LAN net → 10.0.10.x → TCP 22
 
 - Filebeat 7.10.2 installed with Wazuh module
 
 - Wazuh template and ingest pipeline loaded into Elasticsearch
 
-- Filebeat connecting to https://10.0.10.10:9200 — wazuh-alerts-4.x index active with 74 initial documents
+- Filebeat connecting to https://10.0.10.x:9200 — wazuh-alerts-4.x index active with 74 initial documents
 
 # **Issues Encountered**
 
@@ -86,7 +86,7 @@ During cert reissuance, the OpenSSL CA database prevented issuing a new cert wit
 
 ## **Filebeat DNS/Proxy Routing Error**
 
-Filebeat was initially pointed at elasticsearch.homelab.local which resolves to NPM at 10.0.20.30. NPM proxies port 443 only — it does not pass port 9200. Filebeat timed out connecting. The IP SAN was added to the Elasticsearch cert specifically to allow direct IP connections, but the hostname was used instead of the IP. Resolution: point Filebeat directly at 10.0.10.10:9200. NPM is for browser access only — backend service-to-service connections must use direct IPs or dedicated internal DNS records that resolve to the actual service host.
+Filebeat was initially pointed at elasticsearch.homelab.local which resolves to NPM at 10.0.20.x. NPM proxies port 443 only — it does not pass port 9200. Filebeat timed out connecting. The IP SAN was added to the Elasticsearch cert specifically to allow direct IP connections, but the hostname was used instead of the IP. Resolution: point Filebeat directly at 10.0.10.x:9200. NPM is for browser access only — backend service-to-service connections must use direct IPs or dedicated internal DNS records that resolve to the actual service host.
 
 ## **Kibana CA Trust Chain**
 
@@ -117,9 +117,9 @@ Kibana could not verify Elasticsearch's certificate because it did not trust the
 | Disable root password SSH on Proxmox nodes | Part of general hardening session | **Open** |
 | Suricata tuning and IPS mode | After hardening session | **Open** |
 | Logstash ssl_verification_mode => full | Currently set to none — update after CA cert deployed to Logstash | **Open** |
-| Heimdall stale route fix | 10.99.0.0/24 now via 192.168.100.250, persistent in NM | **Closed** |
+| Heimdall stale route fix | 10.99.0.0/24 now via 192.168.100.x, persistent in NM | **Closed** |
 | TLS on Elasticsearch and Kibana | Internal PKI certs, Kibana at elasticsearch.homelab.local | **Closed** |
-| Wazuh Manager deployed | VM 601, 10.0.10.11, Filebeat shipping alerts to Elasticsearch | **Closed** |
+| Wazuh Manager deployed | VM 601, 10.0.10.x, Filebeat shipping alerts to Elasticsearch | **Closed** |
 
 github.com/dcollins50/dcollins-homelab  |  Internal Documentation  |  Not for Distribution
 

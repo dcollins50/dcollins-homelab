@@ -8,7 +8,7 @@ status: resolved
 # Incident: Elastic Log Shipping Outage
 
 **Date:** 2026-09-13 – 2026-09-14
-**Systems affected:** soc-stack (VM 600, 10.0.10.10), wazuh-manager (VM 601, 10.0.10.11), Jetson Orin Nano (10.99.0.100, VLAN40)
+**Systems affected:** soc-stack (VM 600, 10.0.10.x), wazuh-manager (VM 601, 10.0.10.x), Jetson Orin Nano (10.99.0.x, VLAN40)
 **Status:** Resolved
 
 ## Summary
@@ -66,13 +66,13 @@ Both new templates and today's already-existing indices were backfilled with the
 
 ## Root Cause 3: OPNSense blocking Jetson log traffic
 
-Independent of the above, the Jetson's Filebeat (VLAN40, `10.99.0.100`) had been unable to reach soc-stack's Logstash beats input on port 5044 since Filebeat was last restarted (Aug 20), with connection attempts silently timing out (46,000+ failed reconnect attempts).
+Independent of the above, the Jetson's Filebeat (VLAN40, `10.99.0.x`) had been unable to reach soc-stack's Logstash beats input on port 5044 since Filebeat was last restarted (Aug 20), with connection attempts silently timing out (46,000+ failed reconnect attempts).
 
-<!-- redacted: operational security detail redacted for public repo -->
+Diagnosis ruled out, in order: Logstash health (fine, confirmed listening), routing/gateway reachability from the Jetson (fine), and finally the OPNSense ruleset on `VLAN40_SecurityLab1`, which had an unlogged **"Block VLAN40 to internal VLANs"** rule with no carve-out for log shipping (only Wazuh agent ports 1514-1515 were allowed through, via an existing rule). Because the block rule had logging disabled, it never appeared in the OPNSense filter log, which delayed the diagnosis.
 
 **Fix:** Added two reusable (non-VLAN-specific) aliases and one new allow rule above the block rule on `VLAN40_SecurityLab1`:
 
-- Alias `SOC_Stack_Ingest` (host) → `10.0.10.10`
+- Alias `SOC_Stack_Ingest` (host) → `10.0.10.x`
 - Alias `SOC_Stack_Log_Ports` (port list) → `5044, 5045, 5144, 5145`
 - Rule: Pass, VLAN40_SecurityLab1 net → `SOC_Stack_Ingest` on `SOC_Stack_Log_Ports`, logging enabled, positioned above the internal-VLAN block rule.
 
@@ -81,7 +81,7 @@ Independent of the above, the Jetson's Filebeat (VLAN40, `10.99.0.100`) had been
 - `curl -sk -u elastic:<pw> https://localhost:9200/_cluster/health | jq '.active_shards'` — confirmed drop from 997 to ~379 shards.
 - Logstash logs (`journalctl -u logstash`) confirmed clean writes with no further `validation_exception` errors.
 - Kibana Discover confirmed live data resuming across all sources.
-- `nc -zv 10.0.10.10 5044` from the Jetson confirmed connectivity after the firewall fix; `journalctl -u filebeat` confirmed a clean reconnect.
+- `nc -zv 10.0.10.x 5044` from the Jetson confirmed connectivity after the firewall fix; `journalctl -u filebeat` confirmed a clean reconnect.
 
 ## Follow-ups / open items
 

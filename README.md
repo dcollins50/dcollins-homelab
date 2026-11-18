@@ -16,10 +16,12 @@ The stack covers:
 - OPNSense firewall with Suricata IDS and full VLAN isolation
 - Wazuh SIEM with agents deployed across cluster endpoints
 - Elastic Stack 8.19 with active security dashboards covering detection, infrastructure, and compliance
-- Internal PKI with a Root CA and Intermediate CA issuing TLS certificates across all services, migrating toward step-ca
+- Internal PKI with an offline Root CA and step-ca issuing short-lived TLS certificates over ACME, plus SSH certificates for bastion login
+- Self-hosted identity (Authentik) with MFA in front of admin access
 - Alert automation (Shuffle SOAR) and incident case management (DFIR-IRIS)
-- Dedicated security lab environment for penetration testing and adversary simulation
-- WireGuard VPN, Cloudflare Tunnels, and Tailscale for layered remote administration
+- Dedicated security lab environment for penetration testing, adversary simulation and web app scanning
+- Cloudflare Zero Trust (WARP) to a certificate-only SSH bastion as the admin path, with Tailscale as break-glass
+- Nightly backups to Proxmox Backup Server with an encrypted offsite copy in Backblaze B2
 
 ---
 
@@ -37,13 +39,15 @@ Full topology documentation: [docs/Network.md](docs/Network.md). Per-VLAN detail
 |---|---|---|---|
 | 1 | Management | Proxmox nodes, OPNSense management | Live |
 | 10 | SOC | ELK Stack, Wazuh Manager, Shuffle SOAR, DFIR-IRIS | Live |
-| 20 | Services | Self-hosted services (Gitea, Vaultwarden, Portainer, Uptime Kuma, Stremio, internal NPM) | Live |
-| 30 | Trust Infrastructure | Internal PKI (Root/Intermediate CA), Authentik IdP, step-ca | Live |
-| 40 | Security Lab 1 | Kali, Metasploitable2, DVWA, Jetson (flat network) | Live |
+| 20 | Services | Self-hosted services (Gitea, Vaultwarden, Portainer, Uptime Kuma, internal NPM), Ubuntu desktop VM | Live |
+| 30 | Trust Infrastructure | Root CA, step-ca, Authentik IdP, Ansible/Semaphore update automation | Live |
+| 40 | Security Lab 1 | Kali, Metasploitable2, DVWA, OWASP ZAP scanner, Jetson (flat network) | Live |
 | 41 | Security Lab 2 | Windows 11 malware sandbox (fully air-gapped) | Live |
-| 50 | DMZ1 | Public-facing services via Cloudflare Tunnel | Live |
-| 51 | DMZ2 / SSH Bastion | Hardened single SSH entry point | Live |
-| 60 | Storage | NAS appliance | Planned |
+| 50 | DMZ | Public-facing reverse proxy, push notifications, collaboration services | Live |
+| 51 | DMZBastion | Certificate-only SSH bastion, isolated from the rest of the DMZ | Live |
+| 52 | DMZTunnels | Cloudflare Tunnel connectors, so every tunnel-to-target path crosses the firewall | Live |
+| 55 | CI | Isolated CI runner, outbound internet only | Live |
+| 60 | Storage | Proxmox Backup Server | Live |
 
 ---
 
@@ -69,9 +73,9 @@ Full topology documentation: [docs/Network.md](docs/Network.md). Per-VLAN detail
 
 Per-host detail lives in [docs/Hosts/](docs/Hosts/).
 
-### VM Inventory
+### VM and LXC Inventory
 
-| VM | Host | Network | Role | Status |
+| Guest | Host | Network | Role | Status |
 |---|---|---|---|---|
 | services-host (VM 200) | pve-env1 | VLAN20 | Docker Host 1 | Live |
 | soar-host (VM 602) | pve-env1 | VLAN10 | Shuffle SOAR, alert automation | Live |
@@ -79,14 +83,22 @@ Per-host detail lives in [docs/Hosts/](docs/Hosts/).
 | pve-iris (VM 604) | pve-env1 | VLAN10 | DFIR-IRIS, incident case tracking | Live |
 | soc-stack (VM 600) | pve-env2 | VLAN10 | Elasticsearch, Logstash, Kibana | Live |
 | wazuh-manager (VM 601) | pve-env2 | VLAN10 | Wazuh SIEM manager | Live |
-| ubuntu (VM 401) | pve-services | VLAN30 | General services | Live |
-| pve-ca-root (VM 500) | pve-services | VLAN30 | Root CA | Live |
-| pve-ca-intermediate (VM 501) | pve-services | VLAN30 | Intermediate CA | Live |
+| pve-pbs (VM 6000) | pve-env1 | VLAN60 | Proxmox Backup Server, synced to Backblaze B2 | Live |
+| pve-ci (VM 800) | pve-env1 | VLAN55 | Gitea Actions CI runner | Live |
+| npm-dmz (LXC 2200) | pve-env1 | VLAN50 | Public-facing reverse proxy, hosts ntfy | Live |
+| dev-git (LXC 3300) | pve-env1 | VLAN50 | Collaboration Gitea for an outside contributor | Live |
+| nimbus (LXC 3400) | pve-env1 | VLAN50 | Nextcloud file sharing | Live |
+| ubuntu-401 (VM 401) | pve-services | VLAN20 | Ubuntu desktop | Live |
+| pve-ca-root (VM 500) | pve-services | VLAN30 | Root CA, offline except for CA operations | Live |
+| pve-ca-intermediate (VM 501) | pve-services | VLAN30 | Legacy OpenSSL Intermediate CA, being retired | Live |
+| pve-int-stepca (LXC 511) | pve-services | VLAN30 | step-ca: TLS certificates over ACME, SSH user CA | Live |
 | Authentik (LXC 2201) | pve-services | VLAN30 | Self-hosted IdP/SSO | Live |
-| pve-int-stepca (LXC 511) | pve-services | VLAN30 | step-ca (Docker-in-LXC), planned Intermediate CA replacement | In progress |
-| pve-bastion (LXC 2202) | pve-services | VLAN51 | SSH Bastion, WARP-based Zero Trust access | In progress |
-| pve-authtunnel (LXC 2100) | pve-services | VLAN50 | Dedicated Cloudflare Tunnel publishing Authentik for Zero Trust auth | Live |
+| ansible-lab (LXC 1101) | pve-services | VLAN30 | Semaphore and Ansible for patching the cluster | In progress |
+| pve-bastion (LXC 2202) | pve-services | VLAN51 | SSH bastion, certificate-only login over Cloudflare WARP | Live |
+| pve-authtunnel (LXC 2100) | pve-services | VLAN52 | Cloudflare Tunnel publishing Authentik for Cloudflare Access | Live |
+| pve-stepca-tunnel (LXC 2101) | pve-services | VLAN52 | Cloudflare Tunnel giving enrolled devices a private route to step-ca only | Live |
 | kali-attack (VM 300) | pve-gateway | VLAN40 | Penetration testing | Live |
+| pve-zap (LXC 1200) | pve-gateway | VLAN40 | OWASP ZAP web app scanner | Live |
 | metasploitable2 (VM 301) | pve-gateway | VLAN40 | Vulnerable target | Live |
 | dvwa (VM 302) | pve-gateway | VLAN40 | Vulnerable web app | Live |
 | malware-win11 (VM 400) | pve-gateway | VLAN41 | Malware analysis sandbox (air-gapped) | Live |
@@ -107,7 +119,7 @@ Dashboards:
 - Suricata SOC
 - The full set of official Wazuh dashboards (security events, vulnerability management, compliance, agent status)
 
-Wazuh agents are deployed across cluster endpoints. OPNSense is monitored via agentless SSH. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates.
+Wazuh agents are deployed across cluster endpoints. The Wazuh indexer connects to Elasticsearch over HTTPS using internal PKI certificates.
 
 Full SOC documentation: [docs/SOC-Stack.md](docs/SOC-Stack.md). Phased buildout records: [docs/Projects/soc-stack-buildout/](docs/Projects/soc-stack-buildout/).
 
@@ -115,12 +127,12 @@ Full SOC documentation: [docs/SOC-Stack.md](docs/SOC-Stack.md). Phased buildout 
 
 ## Internal PKI
 
-All internal services communicate over TLS using certificates issued by an internal certificate authority hierarchy. The PKI runs on isolated VMs in pve-services, on the Trust Infrastructure VLAN alongside Authentik (self-hosted IdP/SSO).
+Internal services communicate over TLS using certificates issued by an internal certificate authority hierarchy. The PKI runs on pve-services, on the Trust Infrastructure VLAN alongside Authentik (self-hosted IdP/SSO).
 
-- Root CA signs the Intermediate CA only. The root private key is kept offline.
-- Intermediate CA issues leaf certificates to all internal services.
-- Certificates are deployed across Elasticsearch, Kibana, Wazuh, Nginx Proxy Manager, and all Proxmox nodes.
-- The Intermediate CA is migrating from raw OpenSSL to step-ca, part of a longer-term goal of building a fully self-hosted, low-cost PKI/identity stack.
+- The Root CA signs intermediates only. Its VM stays powered off except for CA operations.
+- step-ca holds the intermediate and issues 60-day leaf certificates over ACME to the services behind the internal reverse proxy, with automated renewal.
+- step-ca is also the SSH user CA. Bastion logins use short-lived SSH certificates issued after an Authentik login with MFA, and passwords are disabled.
+- The original OpenSSL intermediate is being retired along with the legacy `.local` domain, as services move to `.internal` names.
 
 Full PKI documentation: [docs/PKI.md](docs/PKI.md).
 
@@ -136,13 +148,27 @@ Running on services-host (pve-env1, VLAN20) via Docker:
 | Vaultwarden | Password manager (Bitwarden-compatible) |
 | Portainer | Container management |
 | Uptime Kuma | Service uptime monitoring |
-| Stremio | Media server |
+| Nginx Proxy Manager | Internal reverse proxy, step-ca certificates |
+
+Elsewhere in the lab:
+
+| Service | Where | Purpose |
+|---|---|---|
+| ntfy | npm-dmz (VLAN50) | Push notifications for alerts |
+| nimbus | LXC on pve-env1 (VLAN50) | Nextcloud file sharing, reachable over Tailscale only |
+| dev-git | LXC on pve-env1 (VLAN50) | Gitea for collaborating with an outside contributor, reachable over Tailscale only |
+
+---
+
+## Backups
+
+Every guest except the throwaway security lab VMs is backed up nightly to Proxmox Backup Server (VLAN60). A daily sync job copies the encrypted backups to Backblaze B2 for an offsite copy, with its own retention (7 daily, 4 weekly, 6 monthly) and a monthly verify job. Unencrypted backups never leave the lab.
 
 ---
 
 ## Security Lab
 
-The security lab runs across VLAN40 and VLAN41, fully isolated from all production VLANs. VLAN40 is a flat network hosting Kali Linux, Metasploitable2, DVWA, and the Jetson Orin Nano, with restricted outbound internet for tool updates. VLAN41 is a separate, fully air-gapped segment reserved for the Windows 11 malware analysis sandbox, with no route to or from any other VLAN, including VLAN40.
+The security lab runs across VLAN40 and VLAN41, fully isolated from all production VLANs. VLAN40 is a flat network hosting Kali Linux, Metasploitable2, DVWA, an OWASP ZAP scanner, and the Jetson Orin Nano, with restricted outbound internet for tool updates. VLAN41 is a separate, fully air-gapped segment reserved for the Windows 11 malware analysis sandbox, with no route to or from any other VLAN, including VLAN40.
 
 Full lab documentation: [docs/Security-Lab.md](docs/Security-Lab.md).
 
@@ -152,12 +178,11 @@ Full lab documentation: [docs/Security-Lab.md](docs/Security-Lab.md).
 
 | Item | Description |
 |---|---|
-| SSH Bastion enrollment completion | WARP Zero Trust device enrollment is configured end to end but currently blocked by a browser-side QUIC protocol error on the final authorize step |
+| Update automation | Semaphore and Ansible on ansible-lab, rolling patches out to the Proxmox nodes, VMs and LXCs |
+| Legacy PKI retirement | Retire the OpenSSL intermediate and the `.local` domain |
 | Self-Hosted Website | Personal site and portfolio hosted in DMZ |
 | Stoat Messenger | Self-hosted messaging |
-| step-ca migration | Complete cutover of the Intermediate CA from raw OpenSSL to step-ca |
 | Suricata IPS mode | Promote from detection-only to inline blocking |
-| Storage VLAN buildout | Deploy NAS appliance on VLAN60 |
 
 ---
 
@@ -206,6 +231,9 @@ Task-level, repeatable procedures for operating each piece of software in this s
 - [Portainer](docs/Runbooks/portainer/)
 - [Uptime Kuma](docs/Runbooks/uptime-kuma/)
 - [Vaultwarden](docs/Runbooks/vaultwarden/)
+- [Ansible](docs/Runbooks/ansible/)
+- [Windows](docs/Runbooks/windows/)
+- [Docs sanitizer](docs/Runbooks/sanitize/)
 - [Linux](docs/Runbooks/linux/)
 
 ### Projects
